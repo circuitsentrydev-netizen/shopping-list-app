@@ -1,12 +1,12 @@
 import {useState} from 'react';
 import {useDispatch} from 'react-redux';
-import {registerUser} from '../store
+import registerUser./store
 import {useNavigate, Link} from 'react-router-dom';
 
 const default function Register() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const {Form,setForm} = useState({username: '', password: ''});
+    const FormsetForm= useState({username: '', password: ''});
 
     const handleRegister = (e: React.FormEvent) => {
         e.preventDefault();
