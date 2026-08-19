@@ -35,23 +35,23 @@ export default function Profile() {
                                                                                               };
 
                                                                                                 return (
-                                                                                                    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24 px-4 pt-6">
-                                                                                                          <div className="flex flex-col items-center mb-6">
-                                                                                                                  <div className="w-16 h-16 rounded-full bg-brandGreen text-white flex items-center justify-center font-bold text-2xl shadow-md mb-2">
-                                                                                                                            {user?.name?.charAt(0) || 'U'}
-                                                                                                                                    </div>
-                                                                                                                                            <h2 className="font-bold text-lg">{user?.name} {user?.surname}</h2>
-                                                                                                                                                    <p className="text-xs text-gray-400">{user?.email}</p>
-                                                                                                                                                          </div>
-
-                                                                                                                                                                <form onSubmit={handleUpdate} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                                                                                                                                                                        <div>
-                                                                                                                                                                                  <label className="text-xs text-gray-400 block mb-1">First Name</label>
-                                                                                                                                                                                            <input type="text" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                                                                                    <div class
                                                                                                                                                                                                     </div>
                                                                                                                                                                                                             <div>
                                                                                                                                                                                                                       <label className="text-xs text-gray-400 block mb-1">Surname</label>
-                                                                                                                                                                                                                                <input type="text" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.surname} onChange={e => setForm({...form, surname: e.target.value})} />
+                                                                                                        //                                                                                                                         <input type="text" clName="max-w-md mx-auto min-h-screen bg-gray-50 pb-24 px-4 pt-6">
+                                                                                                        //   <div className="flex flex-col items-center mb-6">
+                                                                                                        //           <div className="w-16 h-16 rounded-full bg-brandGreen text-white flex items-center justify-center font-bold text-2xl shadow-md mb-2">
+                                                                                                        //                     {user?.name?.charAt(0) || 'U'}
+                                                                                                        //                             </div>
+                                                                                                        //                                     <h2 className="font-bold text-lg">{user?.name} {user?.surname}</h2>
+                                                                                                        //                                             <p className="text-xs text-gray-400">{user?.email}</p>
+                                                                                                        //                                                   </div>
+
+                                                                                                        //                                                         <form onSubmit={handleUpdate} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                                                                                                        //                                                                 <div>
+                                                                                                        //                                                                           <label className="text-xs text-gray-400 block mb-1">First Name</label>
+                                                                                                        //                                                                                     <input type="text" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />assName="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.surname} onChange={e => setForm({...form, surname: e.target.value})} />
                                                                                                                                                                                                                                         </div>
                                                                                                                                                                                                                                                 <div>
                                                                                                                                                                                                                                                           <label className="text-xs text-gray-400 block mb-1">Cell Number</label>

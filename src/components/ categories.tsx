@@ -1,6 +1,7 @@
-import BottomNav from '../components/BottomNav';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+// import BottomNav from '../components/BottomNav';
+// import { useSelector } from 'react-redux'; 
+    import { RootState } from '../store';
+import BottomNav from './BottomNav';
 
 export default function Categories() {
   const items = useSelector((state: RootState) => state.app.items);
@@ -22,7 +23,7 @@ export default function Categories() {
                                                                                                                                       })}
                                                                                                                                             </div>
                                                                                                                                                   <BottomNav />
-                                                                                                                                                      </div>
+                                                                                                                                                      </div>  
                                                                                                                                                         );
                                                                                                                                                         }
-                                                                                                                                                        
+                                                                                                                                                        //  
