@@ -1,6 +1,6 @@
 // import BottomNav from '../components/BottomNav';
 // import { useSelector } from 'react-redux'; 
-    import { RootState } from '../store';
+    import { RootState } from '/store';
 import BottomNav from './BottomNav';
 
 export default function Categories() {
