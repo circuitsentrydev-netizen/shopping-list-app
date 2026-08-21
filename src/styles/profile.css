@@ -1,0 +1,152 @@
+.profile-page {
+  min-height: 100vh;
+  background: var(--bgPage);
+  padding: 32px 16px 96px;
+}
+
+.profile-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  margin-bottom: 24px;
+}
+
+.profile-eyebrow {
+  margin: 0;
+  color: var(--brandGreen);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-title {
+  margin: 8px 0 0;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  color: var(--textPrimary);
+}
+
+.profile-card {
+  background: var(--bgCard);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--brandGreenLight);
+  color: var(--brandGreen);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.profile-name {
+  margin: 0;
+  color: var(--textPrimary);
+  font-size: 1.55rem;
+}
+
+.profile-email {
+  margin: 6px 0 0;
+  color: var(--textSecondary);
+  font-size: 0.95rem;
+}
+
+.profile-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-field.full {
+  grid-column: 1 / -1;
+}
+
+.profile-label {
+  color: var(--textPrimary);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.profile-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bgSoft);
+  color: var(--textPrimary);
+  padding: 12px 14px;
+}
+
+.profile-input:focus {
+  outline: none;
+  border-color: var(--brandGreen);
+  box-shadow: 0 0 0 3px rgba(47, 143, 91, 0.12);
+}
+
+.profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.profile-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-btn.primary {
+  background: var(--brandGreen);
+  color: #fff;
+}
+
+.profile-btn.primary:hover {
+  background: var(--brandGreenDark);
+}
+
+.profile-btn.secondary {
+  background: #f3f4f6;
+  color: var(--textPrimary);
+}
+
+@media (max-width: 640px) {
+  .profile-form {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-top,
+  .profile-header,
+  .profile-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-btn {
+    width: 100%;
+  }
+}

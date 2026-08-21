@@ -1,68 +1,62 @@
-import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateProfile, logoutUser } from '../store';
+import { useAppSelector } from '../app/hooks';
 import type { RootState } from '../store';
-import BottomNav from '../components/BottomNav';
+import '../styles/profile.css';
 
 export default function Profile() {
-  const dispatch = useDispatch();
-    const { user } = useSelector((state: RootState) => state.app);
-      
-        const [form, setForm] = useState({
-            name: user?.name || '',
-                surname: user?.surname || '',
-                    cellNumber: user?.cellNumber || '',
-                        email: user?.email || '',
-                            password: ''
-                              });
+  const user = useAppSelector((state: RootState) => state.user ?? state.auth.user);
 
-                                const handleUpdate = (e: React.FormEvent) => {
-                                    e.preventDefault();
-                                        let updatedPayload: any = {
-                                              user: { name: form.name, surname: form.surname, cellNumber: form.cellNumber, email: form.email }
-                                                  };
-                                                      if (form.password) {
-                                                            updatedPayload.pass = form.password;
-                                                                }
-                                                                    dispatch(updateProfile(updatedPayload));
-                                                                        alert('Profile records updated perfectly!');
-                                                                          };
+  const displayName = user ? `${user.name} ${user.surname}`.trim() : 'Guest User';
+  const email = user?.email ?? 'guest@example.com';
+  const phone = user?.cellNumber ?? '+27 00 000 0000';
 
-                                                                            return (
-                                                                                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24 px-4 pt-6">
-                                                                                      <div className="flex flex-col items-center mb-6">
-                                                                                              <div className="w-16 h-16 rounded-full bg-brandGreen text-white flex items-center justify-center font-bold text-2xl shadow-md mb-2">
-                                                                                                        {user?.name?.charAt(0) || 'U'}
-                                                                                                                </div>
-                                                                                                                        <h2 className="font-bold text-lg">{user?.name} {user?.surname}</h2>
-                                                                                                                                <p className="text-xs text-gray-400">{user?.email}</p>
-                                                                                                                                      </div>
+  return (
+    <div className="profile-page">
+      <div className="profile-container">
+        <header className="profile-header">
+          <div>
+            <p className="profile-eyebrow">Account</p>
+            <h1 className="profile-title">My Profile</h1>
+          </div>
+        </header>
 
-                                                                                                                                            <form onSubmit={handleUpdate} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                                                                                                                                                    <div>
-                                                                                                                                                              <label className="text-xs text-gray-400 block mb-1">First Name</label>
-                                                                                                                                                                        <input type="text" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                                                                                                                                                                                </div>
-                                                                                                                                                                                        <div>
-                                                                                                                                                                                                  <label className="text-xs text-gray-400 block mb-1">Surname</label>
-                                                                                                                                                                                                            <input type="text" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.surname} onChange={e => setForm({...form, surname: e.target.value})} />
-                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                            <div>
-                                                                                                                                                                                                                                      <label className="text-xs text-gray-400 block mb-1">Cell Number</label>
-                                                                                                                                                                                                                                                <input type="tel" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.cellNumber} onChange={e => setForm({...form, cellNumber: e.target.value})} />
-                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                <div>
-                                                                                                                                                                                                                                                                          <label className="text-xs text-gray-400 block mb-1">New Password (Leave blank to keep current)</label>
-                                                                                                                                                                                                                                                                                    <input type="password" className="w-full border p-2.5 rounded-xl bg-gray-50 text-sm" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
-                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                    <button type="submit" className="w-full py-2.5 bg-brandGreen text-white rounded-xl text-sm font-semibold shadow hover:bg-brandGreen-hover">Update Profile Settings</button>
-                                                                                                                                                                                                                                                                                                          </form>
+        <section className="profile-card">
+          <div className="profile-top">
+            <div className="profile-avatar">{user?.name?.[0] ?? 'G'}</div>
 
-                                                                                                                                                                                                                                                                                                                <button type="button" onClick={() => dispatch(logoutUser())} className="w-full mt-4 py-3 bg-red-50 text-red-600 font-semibold rounded-xl text-sm border border-red-200">
-                                                                                                                                                                                                                                                                                                                        Log Out Application
-                                                                                                                                                                                                                                                                                                                              </button>
-                                                                                                                                                                                                                                                                                                                                    <BottomNav />
-                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                          );
-                                                                                                                                                                                                                                                                                                                                          }
-                                                                                                                                                                                                                                                                                                                                          
+            <div>
+              <h2 className="profile-name">{displayName}</h2>
+              <p className="profile-email">{email}</p>
+            </div>
+          </div>
+
+          <form className="profile-form">
+            <div className="profile-field">
+              <label className="profile-label">Name</label>
+              <input className="profile-input" value={user?.name ?? ''} readOnly />
+            </div>
+
+            <div className="profile-field">
+              <label className="profile-label">Surname</label>
+              <input className="profile-input" value={user?.surname ?? ''} readOnly />
+            </div>
+
+            <div className="profile-field full">
+              <label className="profile-label">Email</label>
+              <input className="profile-input" value={email} readOnly />
+            </div>
+
+            <div className="profile-field full">
+              <label className="profile-label">Cell Number</label>
+              <input className="profile-input" value={phone} readOnly />
+            </div>
+          </form>
+
+          <div className="profile-actions">
+            <button type="button" className="profile-btn secondary">Edit</button>
+            <button type="button" className="profile-btn primary">Save Changes</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

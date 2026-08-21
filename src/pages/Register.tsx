@@ -1,44 +1,110 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { registerUser, type AppDispatch } from '../store';
+import { registerUser } from '../features/authslice';
+import '../styles/auth.css';
+
+type RegisterForm = {
+  name: string;
+  surname: string;
+  email: string;
+  cellNumber: string;
+  password: string;
+};
+
+const defaultForm: RegisterForm = {
+  name: '',
+  surname: '',
+  email: '',
+  cellNumber: '',
+  password: '',
+};
 
 export default function Register() {
-    const dispatch = useDispatch<AppDispatch>();
-    const navigate = useNavigate();
-    const [form, setForm] = useState({
-        name: '',
-        surname: '',
-        email: '',
-        cellNumber: '',
-        password: '',
-    });
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [form, setForm] = useState<RegisterForm>(defaultForm);
 
-    const handleRegister = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        dispatch(registerUser({
-            user: { ...form },
-            pass: form.password,
-        }));
-        navigate('/login');
-    };
+  const handleRegister = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    return (
-        <div className="max-w-md mx-auto min-h-screen bg-white p-6 flex flex-col justify-center">
-            <div className="text-center mb-8">
-                <div className="text-brandGreen text-4xl mb-2">🛒</div>
-                <h2 className="text-2xl font-bold">Create Account</h2>
-                <p className="text-gray-500 text-sm">Let's get started</p>
-            </div>
-            <form onSubmit={handleRegister} className="space-y-4">
-                <input required type="text" placeholder="Full Name" className="w-full border p-3 rounded-xl bg-gray-50" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-                <input required type="text" placeholder="Surname" className="w-full border p-3 rounded-xl bg-gray-50" value={form.surname} onChange={(event) => setForm({ ...form, surname: event.target.value })} />
-                <input required type="email" placeholder="Email" className="w-full border p-3 rounded-xl bg-gray-50" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-                <input required type="tel" placeholder="Cell Number" className="w-full border p-3 rounded-xl bg-gray-50" value={form.cellNumber} onChange={(event) => setForm({ ...form, cellNumber: event.target.value })} />
-                <input required type="password" placeholder="Password" className="w-full border p-3 rounded-xl bg-gray-50" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-                <button type="submit" className="w-full bg-brandGreen hover:bg-brandGreen-hover text-white py-3 rounded-xl font-semibold shadow-md">Create</button>
-            </form>
-            <p className="text-center text-sm text-gray-500 mt-6">Already have an account? <Link to="/login" className="text-brandGreen font-semibold">Log In</Link></p>
-        </div>
+    dispatch(
+      registerUser({
+        username: form.email,
+        name: form.name,
+        surname: form.surname,
+        email: form.email,
+        cellNumber: form.cellNumber,
+      })
     );
+
+    alert('Account created successfully!');
+    navigate('/login');
+  };
+
+  return (
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="text-center">
+          <div className="auth-logo">🛒</div>
+          <h2 className="auth-title">Create Account</h2>
+          <p className="auth-subtitle">Let's get started</p>
+        </div>
+
+        <form onSubmit={handleRegister} className="auth-form">
+          <input
+            required
+            type="text"
+            placeholder="Full Name"
+            value={form.name}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+            className="auth-input"
+          />
+
+          <input
+            required
+            type="text"
+            placeholder="Surname"
+            value={form.surname}
+            onChange={(e) => setForm((prev) => ({ ...prev, surname: e.target.value }))}
+            className="auth-input"
+          />
+
+          <input
+            required
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+            className="auth-input"
+          />
+
+          <input
+            required
+            type="tel"
+            placeholder="Cell Number"
+            value={form.cellNumber}
+            onChange={(e) => setForm((prev) => ({ ...prev, cellNumber: e.target.value }))}
+            className="auth-input"
+          />
+
+          <input
+            required
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+            className="auth-input"
+          />
+
+          <button type="submit" className="auth-button">Create</button>
+        </form>
+
+        <p className="auth-footer">
+          Already have an account?{' '}
+          <Link to="/login" className="auth-link">Log In</Link>
+        </p>
+      </div>
+    </div>
+  );
 }
