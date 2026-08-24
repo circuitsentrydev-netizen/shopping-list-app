@@ -9,10 +9,10 @@ type ShoppingListState = {
   error: string | null;
 };
 
-// FIX 1 & 2: Added explicit type declaration and fixed the property name typo
+
 const initialState: ShoppingListState = {
   lists: [],
-  selectedListId: null, // Fixed typo from 'setSelectedListId'
+  selectedListId: null, 
   loading: false,
   error: null,
 };
