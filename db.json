@@ -1,23 +1,10 @@
 {
-  "shoppingLists": [
-    {
-      "id": 1,
-      "title": "Groceries",
-      "createdAt": "2026-08-21T00:00:00.000Z",
-      "items": [
-        { "id": 1, "name": "Milk", "quantity": 2, "checked": false },
-        { "id": 2, "name": "Bread", "quantity": 1, "checked": true },
-        { "id": 3, "name": "Apples", "quantity": 5, "checked": false }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Household",
-      "createdAt": "2026-08-20T00:00:00.000Z",
-      "items": [
-        { "id": 1, "name": "Toilet Paper", "quantity": 4, "checked": false },
-        { "id": 2, "name": "Soap", "quantity": 2, "checked": true }
-      ]
-    }
+  "users": [
+  ],
+  "items": [ 
+
+  ],
+  "list": [
+
   ]
 }
