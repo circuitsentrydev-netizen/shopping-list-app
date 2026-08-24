@@ -1,0 +1,30 @@
+.bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-around;
+  max-width: 700px;
+  margin: auto;
+  padding: 12px 16px;
+  background: white;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--textSecondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.nav-item-active {
+  color: var(--brandGreen);
+  font-weight: 700;
+}
