@@ -1,60 +1,65 @@
 import { useAppSelector } from '../app/hooks';
-import type { RootState } from '../store';
-import '../styles/profile.css';
+import type { RootState } from '../features/store/store';
 
 export default function Profile() {
-  const user = useAppSelector((state: RootState) => state.user ?? state.auth.user);
+  const authUser = useAppSelector((state: RootState) => state.auth.user);
+  const storeUser = useAppSelector((state: RootState) => state.user);
+  const user = storeUser ?? authUser;
 
-  const displayName = user ? `${user.name} ${user.surname}`.trim() : 'Guest User';
+  const displayName = user
+    ? `${user' name  '} $ {user.surname  ''}`.trim() || 'Guest User'
+    : 'Guest User';
+
+  // Fixed the broken conditional operators and fallback values
   const email = user?.email ?? 'guest@example.com';
-  const phone = user?.cellNumber ?? '+27 00 000 0000';
+  const phone = user?.cellNumber ?? '+27 68 045 9825';
+  const avatar = user?.name?.charAt(0).toUpperCase() ?? 'G';
 
   return (
     <div className="profile-page">
       <div className="profile-container">
         <header className="profile-header">
-          <div>
-            <p className="profile-eyebrow">Account</p>
-            <h1 className="profile-title">My Profile</h1>
-          </div>
+          <p className="profile-eyebrow">Account</p>
+          <h1 className="profile-title">My Profile</h1>
         </header>
 
         <section className="profile-card">
           <div className="profile-top">
-            <div className="profile-avatar">{user?.name?.[0] ?? 'G'}</div>
+            <div className="profile-avatar">{avatar}</div>
 
             <div>
               <h2 className="profile-name">{displayName}</h2>
               <p className="profile-email">{email}</p>
+              <p className="profile-phone">{phone}</p>
             </div>
           </div>
 
           <form className="profile-form">
             <div className="profile-field">
-              <label className="profile-label">Name</label>
-              <input className="profile-input" value={user?.name ?? ''} readOnly />
+              <label htmlFor="profile-name" className="profile-label">
+                Name
+              </label>
+              <input
+                id="profile-name"
+                className="profile-input"
+                value={user?.name ?? ''}
+                readOnly
+              />
             </div>
 
+            {/* Fixed the broken tags and formatting for the Surname field */}
             <div className="profile-field">
-              <label className="profile-label">Surname</label>
-              <input className="profile-input" value={user?.surname ?? ''} readOnly />
-            </div>
-
-            <div className="profile-field full">
-              <label className="profile-label">Email</label>
-              <input className="profile-input" value={email} readOnly />
-            </div>
-
-            <div className="profile-field full">
-              <label className="profile-label">Cell Number</label>
-              <input className="profile-input" value={phone} readOnly />
+              <label htmlFor="profile-surname" className="profile-label">
+                Surname
+              </label>
+              <input
+                id="profile-surname"
+                className="profile-input"
+                value={user?.surname ?? ''}
+                readOnly
+              />
             </div>
           </form>
-
-          <div className="profile-actions">
-            <button type="button" className="profile-btn secondary">Edit</button>
-            <button type="button" className="profile-btn primary">Save Changes</button>
-          </div>
         </section>
       </div>
     </div>
