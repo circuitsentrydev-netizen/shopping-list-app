@@ -1,6 +1,6 @@
 import '../styles/home.css';
 import { useAppSelector } from '../app/hooks';
-import type { RootState } from '../store';
+import type { RootState } from '../features/store/store';
 
 const fallbackLists = [
   {
