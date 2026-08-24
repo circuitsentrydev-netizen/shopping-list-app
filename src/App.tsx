@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import Settings from "./pages/Settings";
-import type { RootState } from "./store";
+import type { RootState } from "./features/store/store"
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const isAuthenticated = useAppSelector((state: RootState) => state.auth.isAuthenticated);
