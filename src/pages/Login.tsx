@@ -1,35 +1,41 @@
 import { useState, type FormEvent } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../features/authslice';
+import type { RootState } from '../features/store/store';
 import '../styles/auth.css';
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const users = useSelector((state: RootState) => state.auth.users);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    if (email === 'admin@test.com' && password === 'password') {
-      dispatch(loginUser({ email, password }));
-      navigate('/');
+    const user = users.find(
+      (account) =>
+        account.email.toLowerCase() === email.trim().toLowerCase() &&
+        account.password === password
+    );
+
+    if (!user) {
+      alert('Invalid email or password');
       return;
     }
 
-    alert('Invalid email or password');
+    dispatch(loginUser({ email: user.email, password }));
+    navigate('/');
   };
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="text-center">
-          <div className="auth-logo">🛒</div>
-          <h2 className="auth-title">Welcome Back!</h2>
-          <p className="auth-subtitle">Log in to manage your shopping dashboard</p>
-        </div>
+        <h2 className="auth-title">Welcome Back!</h2>
 
         <form onSubmit={handleLogin} className="auth-form">
           <input
@@ -37,7 +43,7 @@ export default function Login() {
             type="email"
             placeholder="Email address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
             className="auth-input"
           />
 
@@ -46,16 +52,17 @@ export default function Login() {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
             className="auth-input"
           />
 
-          <button type="submit" className="auth-button">Log In</button>
+          <button type="submit" className="auth-button">
+            Log In
+          </button>
         </form>
 
         <p className="auth-footer">
-          Don't have an account yet?{' '}
-          <Link to="/register" className="auth-link">Sign up</Link>
+          No account? <Link to="/register">Create one</Link>
         </p>
       </div>
     </div>
