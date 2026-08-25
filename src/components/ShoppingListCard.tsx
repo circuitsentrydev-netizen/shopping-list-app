@@ -1,7 +1,7 @@
-import type { ShoppingList } from '../features/shoppingListApi';
+import type { ShoppingList } from "../features/shoppingListTypes";
 
-type ShoppingListCardProps = {
-  list: ShoppingList;
+
+type ShoppingListCardProps = { list: ShoppingList
   onSelect?: (id: number) => void;
   onDelete?: (id: number) => void;
 };
