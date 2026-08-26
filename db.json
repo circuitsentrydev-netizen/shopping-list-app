@@ -1,5 +1,54 @@
 {
-  "users": [],
-  "list": [],
-  "items": []
+  "users": [
+    {
+      "name": "musa",
+      "surname": "bl",
+      "email": "musa@gmail.com",
+      "cellNumber": "0680459834",
+      "password": "12345678",
+      "id": 1
+    }
+  ],
+  "lists": [
+    {
+      "userId": 1,
+      "title": "Personal Care",
+      "category": "Personal Care",
+      "createdAt": "2026-08-26T13:24:09.144Z",
+      "items": [],
+      "id": 1
+    },
+    {
+      "userId": 1,
+      "title": "Vegetables",
+      "category": "Vegetables",
+      "createdAt": "2026-08-26T13:24:21.986Z",
+      "items": [],
+      "id": 2
+    },
+    {
+      "userId": 1,
+      "title": "Groceries",
+      "category": "Groceries",
+      "createdAt": "2026-08-26T13:24:44.669Z",
+      "items": [
+        {
+          "id": 1787750730786,
+          "name": "chicken",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/26/2026, 3:25:30 PM"
+        }
+      ],
+      "id": 3
+    },
+    {
+      "userId": 1,
+      "title": "Household",
+      "category": "Household",
+      "createdAt": "2026-08-26T13:28:16.422Z",
+      "items": [],
+      "id": 4
+    }
+  ]
 }
