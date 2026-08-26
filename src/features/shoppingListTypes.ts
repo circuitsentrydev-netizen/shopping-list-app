@@ -1,13 +1,16 @@
-export type ShoppingListItem = {
+export interface ShoppingItem {
   id: number;
   name: string;
   quantity: number;
   checked: boolean;
-};
+  modifiedAt: string; // Dynamic tracker timestamp
+}
 
-export type ShoppingList = {
+export interface ShoppingList {
   id: number;
-  title: string;
-  items: ShoppingListItem[];
-  createdAt?: string;
-};
+  userId: number; // Associates list to the logged-in user
+  title: string;  // Explicit list title name
+  category: string; // The automatically calculated category grouping
+  createdAt: string;
+  items: ShoppingItem[];
+}
