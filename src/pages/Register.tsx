@@ -30,16 +30,15 @@ export default function Register() {
 
     dispatch(
       registerUser({
-        username: form.email,
         name: form.name,
         surname: form.surname,
         email: form.email,
         cellNumber: form.cellNumber,
+        password: form.password,
       })
     );
 
-    alert('Account created successfully!');
-    navigate('/login');
+    navigate('/');
   };
 
   return (
