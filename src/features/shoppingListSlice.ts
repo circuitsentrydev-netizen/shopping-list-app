@@ -1,155 +1,104 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-// import { apiRequest } from "../api/Api"
-import type { ShoppingList, ShoppingListItem } from './shoppingListTypes';
+import { createAsyncThunk, type PayloadAction, createSlice } from '@reduxjs/toolkit';
+import type { ShoppingList } from './shoppingListTypes';
 
-type ShoppingListState = {
-  lists: ShoppingList[];
-  selectedListId: number | null;
-  loading: boolean;
-  error: string | null;
+const API_BASE = 'http://localhost:5001';
+
+// Automatically groups shopping containers by parsing internal item name characters
+export const autoDetermineCategory = (title: string, items: any[]): string => {
+  const compositeText = `${title} ${items.map(i => i.name).join(' ')}`.toLowerCase();
+  
+  if (compositeText.includes('veg') || compositeText.includes('onion') || compositeText.includes('tomato') || compositeText.includes('potato')) return 'Vegetables';
+  if (compositeText.includes('soap') || compositeText.includes('tissue') || compositeText.includes('household') || compositeText.includes('tabs')) return 'Household';
+  if (compositeText.includes('care') || compositeText.includes('lotion') || compositeText.includes('shampoo') || compositeText.includes('paste')) return 'Personal Care';
+  if (compositeText.includes('bread') || compositeText.includes('bakery') || compositeText.includes('croissant')) return 'Bakery';
+  if (compositeText.includes('apple') || compositeText.includes('fruit') || compositeText.includes('banana') || compositeText.includes('berry')) return 'Fruits';
+  if (compositeText.includes('cookie') || compositeText.includes('snack') || compositeText.includes('chip') || compositeText.includes('biscuit')) return 'Snacks';
+  return 'Groceries'; // Ultimate natural catch-all bucket fallback
 };
 
-
-const initialState: ShoppingListState = {
-  lists: [],
-  selectedListId: null, 
-  loading: false,
-  error: null,
-};
-
-const BASE_URL = 'http://localhost:3000';
-
-// 🚀 Async Thunk: Fetch lists and automatically embed their items using json-server features
-export const fetchShoppingListsAsync = createAsyncThunk(
-  'shoppingList/fetchShoppingListsAsync',
-  async (_, { rejectWithValue }) => {
-    try {
-      // json-server 1.x uses standard sub-route query param filtering or relationship matching
-      const response = await fetch(`${BASE_URL}/list`);
-      if (!response.ok) throw new Error('Failed to fetch lists');
-      const lists = (await response.json()) as ShoppingList[];
-
-      // Fetch items separately since database structure is flat
-      const itemsResponse = await fetch(`${BASE_URL}/items`);
-      if (!itemsResponse.ok) throw new Error('Failed to fetch list items');
-      const allItems = (await itemsResponse.json()) as (ShoppingListItem & { listId: number })[];
-
-      // Reconstruct components locally into frontend state contract
-      return lists.map((list) => ({
-        ...list,
-        items: allItems.filter((item) => item.listId === list.id),
-      }));
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
+export const fetchUserListsThunk = createAsyncThunk(
+  'shoppingList/fetchUserLists',
+  async (userId: number) => {
+    const response = await fetch(`${API_BASE}/lists?userId=${userId}`);
+    return (await response.json()) as ShoppingList[];
   }
 );
 
-// 🚀 Async Thunk: Create new parent lists
-export const addShoppingListAsync = createAsyncThunk(
-  'shoppingList/addShoppingListAsync',
-  async (title: string, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${BASE_URL}/list`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, createdAt: new Date().toISOString() }),
-      });
-      if (!response.ok) throw new Error('Failed to create new list');
-      const newList = (await response.json()) as ShoppingList;
-      return { ...newList, items: [] };
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
+export const updateListThunk = createAsyncThunk(
+  'shoppingList/updateList',
+  async (list: ShoppingList) => {
+    // Dynamically recalculates assigned target container classification whenever list entries morph
+    const updatedCategory = autoDetermineCategory(list.title, list.items);
+    const fullyMappedList = { ...list, category: updatedCategory };
+
+    const response = await fetch(`${API_BASE}/lists/${list.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fullyMappedList),
+    });
+    return (await response.json()) as ShoppingList;
   }
 );
 
-// 🚀 Async Thunk: Add single sub-items dynamically
-export const addItemToDatabaseAsync = createAsyncThunk(
-  'shoppingList/addItemToDatabaseAsync',
-  async ({ listId, name, quantity }: { listId: number; name: string; quantity: number }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${BASE_URL}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listId, name, quantity, checked: false }),
-      });
-      if (!response.ok) throw new Error('Failed to create item');
-      return (await response.json()) as ShoppingListItem & { listId: number };
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
+export const createCategoryListThunk = createAsyncThunk(
+  'shoppingList/createCategoryList',
+  async (payload: { userId: number; title: string }) => {
+    const calculatedCategory = autoDetermineCategory(payload.title, []);
+    const newList: Omit<ShoppingList, 'id'> = {
+      userId: payload.userId,
+      title: payload.title,
+      category: calculatedCategory,
+      createdAt: new Date().toISOString(),
+      items: []
+    };
+    
+    const response = await fetch(`${API_BASE}/lists`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newList),
+    });
+    return (await response.json()) as ShoppingList;
   }
 );
 
-// 🚀 Async Thunk: Update dynamic checkboxes live on the server
-export const toggleItemCheckedAsync = createAsyncThunk(
-  'shoppingList/toggleItemCheckedAsync',
-  async ({ itemId, checked }: { itemId: number; checked: boolean }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${BASE_URL}/items/${itemId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checked }),
-      });
-      if (!response.ok) throw new Error('Failed to modify checkbox status');
-      return (await response.json()) as ShoppingListItem & { listId: number };
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
+// New Thunk: Completely wipes matching item container record lists out of json-server
+export const deleteCategoryListThunk = createAsyncThunk(
+  'shoppingList/deleteCategoryList',
+  async (listId: number) => {
+    await fetch(`${API_BASE}/lists/${listId}`, { method: 'DELETE' });
+    return listId;
   }
 );
 
 const shoppingListSlice = createSlice({
   name: 'shoppingList',
-  initialState,
+  initialState: {
+    lists: [] as ShoppingList[],
+    selectedListId: null as number | null,
+  },
   reducers: {
     setSelectedListId: (state, action: PayloadAction<number | null>) => {
       state.selectedListId = action.payload;
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
-      // --- Fetch All Lists Cases ---
-      .addCase(fetchShoppingListsAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchShoppingListsAsync.fulfilled, (state, action: PayloadAction<ShoppingList[]>) => {
-        state.loading = false;
+      .addCase(fetchUserListsThunk.fulfilled, (state, action) => {
         state.lists = action.payload;
-        if (!state.selectedListId && state.lists.length > 0) {
-          state.selectedListId = state.lists[0].id;
+      })
+      .addCase(updateListThunk.fulfilled, (state, action) => {
+        const targetIndex = state.lists.findIndex((l) => l.id === action.payload.id);
+        if (targetIndex !== -1) {
+          state.lists[targetIndex] = action.payload;
         }
       })
-      .addCase(fetchShoppingListsAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
+      .addCase(createCategoryListThunk.fulfilled, (state, action) => {
+        state.lists.push(action.payload);
       })
-
-      // --- Add Parent List Cases ---
-      .addCase(addShoppingListAsync.fulfilled, (state, action: PayloadAction<ShoppingList>) => {
-        state.lists.unshift(action.payload);
-        state.selectedListId = action.payload.id;
-      })
-
-      // --- Add Item Cases ---
-      .addCase(addItemToDatabaseAsync.fulfilled, (state, action) => {
-        const list = state.lists.find((l) => l.id === action.payload.listId);
-        if (list) {
-          list.items.push(action.payload);
-        }
-      })
-
-      // --- Checkbox Mutation Cases ---
-      .addCase(toggleItemCheckedAsync.fulfilled, (state, action) => {
-        const list = state.lists.find((l) => l.id === action.payload.listId);
-        const item = list?.items.find((i) => i.id === action.payload.id);
-        if (item) {
-          item.checked = action.payload.checked;
-        }
+      .addCase(deleteCategoryListThunk.fulfilled, (state, action) => {
+        state.lists = state.lists.filter((l) => l.id !== action.payload);
       });
-  },
+  }
 });
 
 export const { setSelectedListId } = shoppingListSlice.actions;
