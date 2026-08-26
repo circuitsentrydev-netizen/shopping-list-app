@@ -33,7 +33,7 @@ export const updateUserAsync = createAsyncThunk(
   'user/updateUserAsync',
   async ({ id, changes }: { id: number; changes: Partial<User> }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/${id}`, {
+      const response = await fetch(`http://localhost:5001/users/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changes),
