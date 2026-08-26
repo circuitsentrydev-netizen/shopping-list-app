@@ -1,109 +1,81 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export type User = {
-  id?: number; // Added to support database primary keys
-  username: string;
+export type Account = {
+  id: string;
   name: string;
   surname: string;
   email: string;
   cellNumber: string;
+  password: string;
 };
 
 type AuthState = {
-  user: User | null;
+  users: Account[];
+  user: Account | null;
   isAuthenticated: boolean;
-  loading: boolean; // Tracks pending API operations
-  error: string | null; // Captures API failure messages
 };
 
 const initialState: AuthState = {
-  user: null, // Default to null for an unauthenticated fresh load
+  users: [
+    {
+      id: 'admin-1',
+      name: 'Fabian',
+      surname: 'Forbay',
+      email: 'fabian.forbay321@gmail.com',
+      cellNumber: '',
+      password: 'password-$$Dut2727',
+    },
+  ],
+  user: null,
   isAuthenticated: false,
-  loading: false,
-  error: null,
 };
-
-// 🚀 Async Thunk: Handles dynamic user registration via POST
-export const registerUserAsync = createAsyncThunk(
-  'auth/registerUserAsync',
-  async (userData: User, { rejectWithValue }) => {
-    try {
-      const response = await fetch('http://localhost:3000/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) throw new Error('Registration failed');
-      return (await response.json()) as User;
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-// 🚀 Async Thunk: Handles dynamic verification via GET
-export const loginUserAsync = createAsyncThunk(
-  'auth/loginUserAsync',
-  async (credentials: { email: string }, { rejectWithValue }) => {
-    try {
-      // Querying json-server by email parameter
-      const response = await fetch(`http://localhost:3000/users?email=${credentials.email}`);
-      if (!response.ok) throw new Error('Server error');
-      
-      const users = (await response.json()) as User[];
-      if (users.length === 0) throw new Error('User not found');
-      
-      return users[0]; // Return the matched profile entry
-    } catch (err: any) {
-      return rejectWithValue(err.message);
-    }
-  }
-);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Standard synchronous actions can remain here
+    registerUser: (
+      state,
+      action: PayloadAction<Omit<Account, 'id'>>
+    ) => {
+      const exists = state.users.some(
+        (user) => user.email.toLowerCase() === action.payload.email.toLowerCase()
+      );
+
+      if (exists) return;
+
+      const newUser: Account = {
+        ...action.payload,
+        id: crypto.randomUUID(),
+      };
+
+      state.users.push(newUser);
+      state.user = newUser;
+      state.isAuthenticated = true;
+    },
+
+    loginUser: (
+      state,
+      action: PayloadAction<{ email: string; password: string }>
+    ) => {
+      const user = state.users.find(
+        (account) =>
+          account.email.toLowerCase() === action.payload.email.toLowerCase() &&
+          account.password === action.payload.password
+      );
+
+      if (user) {
+        state.user = user;
+        state.isAuthenticated = true;
+      }
+    },
+
     logoutUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      state.error = null;
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      // --- Login Lifecycle Cases ---
-      .addCase(loginUserAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUserAsync.fulfilled, (state, action: PayloadAction<User>) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
-      .addCase(loginUserAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-      
-      // --- Registration Lifecycle Cases ---
-      .addCase(registerUserAsync.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerUserAsync.fulfilled, (state, action: PayloadAction<User>) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
-      .addCase(registerUserAsync.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      });
   },
 });
 
-export const { logoutUser } = authSlice.actions;
+export const { registerUser, loginUser, logoutUser } = authSlice.actions;
 export default authSlice.reducer;

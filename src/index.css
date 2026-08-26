@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --brandGreen: #2f8f5b;
   --brandGreenDark: #287a4d;

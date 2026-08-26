@@ -1,5 +1,5 @@
-import { useAppSelector } from '../app/hooks';
-import type { RootState } from '../store';
+import { useAppSelector } from '../features/store/hook'
+import type { RootState } from '../features/store/store';
 
 const categoryIcons: Record<string, string> = {
   Groceries: '🛒',
