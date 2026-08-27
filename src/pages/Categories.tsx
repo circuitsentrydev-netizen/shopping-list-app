@@ -53,11 +53,57 @@ export default function Categories() {
   return (
     <div className="profile-page" style={{ backgroundColor: 'var(--bgPage)' }}>
       <div className="profile-container">
-        <header className="profile-header">
+        
+        {/*  Clean top bar grid for header contents */}
+        <header className="profile-header" style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '28px'
+        }}>
           <div>
-            <p className="profile-eyebrow">Browse All Lists</p>
-            <h1 className="profile-title">Categories</h1>
+            <span style={{ 
+              fontSize: '22px', 
+              fontWeight: '800', 
+              color: '#1b4332', /*  Darker organic grocery green */
+              display: 'block', 
+              marginBottom: '4px',
+              letterSpacing: '-0.3px'
+            }}>
+              FabshopList
+            </span>
+            <h1 className="profile-title" style={{ margin: 0 }}>Categories</h1>
           </div>
+
+          {/* ✨ Upgraded interactive list navigation button badge */}
+          <span 
+            className="profile-eyebrow" 
+            style={{ 
+              margin: 0, 
+              cursor: 'pointer', 
+              fontWeight: '600',
+              fontSize: '13px',
+              color: '#ffffff',
+              backgroundColor: '#2d6a4f', /* Sleek secondary dark green */
+              padding: '6px 14px',
+              borderRadius: '20px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+              transition: 'all 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }}
+            onClick={() => navigate('/home')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1b4332';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2d6a4f';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            Browse All Lists →
+          </span>
         </header>
 
         <section className="profile-card">
