@@ -21,13 +21,13 @@ export default function Home() {
     }
   }, [user, dispatch]);
 
-  // Find the selected list, or default to the user's first available list
+  // Find the selected list, or default to the user's first available list safely
   const activeList = lists.find((list) => list.id === selectedListId) ?? lists[0];
 
   // Dynamic metrics calculated purely from live database state array numbers
-  const totalItems = lists.reduce((sum, list) => sum + list.items.length, 0);
+  const totalItems = lists.reduce((sum, list) => sum + (list.items?.length || 0), 0);
   const checkedItems = lists.reduce(
-    (sum, list) => sum + list.items.filter((item) => item.checked).length,
+    (sum, list) => sum + (list.items?.filter((item) => item.checked).length || 0),
     0
   );
 
@@ -36,9 +36,11 @@ export default function Home() {
   // Handler to dynamically create a new list with prompt inputs straight onto server database rows
   const handleCreateList = async () => {
     if (!user) return;
+    
     const titlePrompt = prompt('Enter a title name for your new shopping list (e.g. Weekly Groceries):');
     if (!titlePrompt || !titlePrompt.trim()) return;
 
+    // Dispatches only userId and title as your slice expects. Auto-categorisation happens in the slice!
     const resultAction = await dispatch(
       createCategoryListThunk({ userId: user.id, title: titlePrompt.trim() }) as any
     );
@@ -61,15 +63,14 @@ export default function Home() {
     <div className="home-page" style={{ backgroundColor: 'var(--bgPage)' }}>
       <div className="home-container">
         <header className="home-header">
-          <div>
+        </header>
+        <div>
+          
             <p className="home-eyebrow">Hello, {displayName}</p>
             <h1 className="home-title">Shopping overview</h1>
           </div>
 
-          <button type="button" onClick={handleCreateList} className="primary-button">
-            + New List
-          </button>
-        </header>
+
 
         <section className="summary-grid">
           <div className="summary-card">
@@ -112,7 +113,7 @@ export default function Home() {
             </div>
 
             <div className="item-list">
-              {activeList.items.length > 0 ? (
+              {activeList.items && activeList.items.length > 0 ? (
                 activeList.items.map((item) => (
                   <div key={item.id} className="item-row">
                     <span className={item.checked ? 'checkmark checked' : 'checkmark'}>
