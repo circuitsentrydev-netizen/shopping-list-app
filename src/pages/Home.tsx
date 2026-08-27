@@ -1,39 +1,30 @@
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import '../styles/home.css';
 import { useAppSelector } from '../features/store/hook';
+import { fetchUserListsThunk, createCategoryListThunk, setSelectedListId } from '../features/shoppingListSlice';
 import type { RootState } from '../features/store/store';
 
-const fallbackLists = [
-  {
-    id: 1,
-    title: 'Groceries',
-    createdAt: '2026-08-21T00:00:00.000Z',
-    items: [
-      { id: 1, name: 'Milk', quantity: 2, checked: false },
-      { id: 2, name: 'Bread', quantity: 1, checked: true },
-      { id: 3, name: 'Apples', quantity: 5, checked: false },
-      { id: 4, name: 'Eggs', quantity: 1, checked: false },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Household',
-    createdAt: '2026-08-20T00:00:00.000Z',
-    items: [
-      { id: 1, name: 'Toilet Paper', quantity: 4, checked: false },
-      { id: 2, name: 'Soap', quantity: 2, checked: true },
-      { id: 3, name: 'Dishwasher Tabs', quantity: 1, checked: false },
-    ],
-  },
-];
-
 export default function Home() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const user = useAppSelector((state: RootState) => state.auth.user);
-  const listsFromStore = useAppSelector((state: RootState) => state.shoppingList.lists);
+  const lists = useAppSelector((state: RootState) => state.shoppingList.lists);
   const selectedListId = useAppSelector((state: RootState) => state.shoppingList.selectedListId);
 
-  const lists = listsFromStore.length > 0 ? listsFromStore : fallbackLists;
-  const activeList = lists.find((list) => list.id === selectedListId) ?? lists[0] ?? fallbackLists[0];
+  // Sync user's real lists from json-server right when they log in or hit the home screen
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(fetchUserListsThunk(user.id) as any);
+    }
+  }, [user, dispatch]);
 
+  // Find the selected list, or default to the user's first available list
+  const activeList = lists.find((list) => list.id === selectedListId) ?? lists[0];
+
+  // Dynamic metrics calculated purely from live database state array numbers
   const totalItems = lists.reduce((sum, list) => sum + list.items.length, 0);
   const checkedItems = lists.reduce(
     (sum, list) => sum + list.items.filter((item) => item.checked).length,
@@ -42,8 +33,32 @@ export default function Home() {
 
   const displayName = user?.name ? `${user.name} ${user.surname ?? ''}`.trim() : 'Guest';
 
+  // Handler to dynamically create a new list with prompt inputs straight onto server database rows
+  const handleCreateList = async () => {
+    if (!user) return;
+    const titlePrompt = prompt('Enter a title name for your new shopping list (e.g. Weekly Groceries):');
+    if (!titlePrompt || !titlePrompt.trim()) return;
+
+    const resultAction = await dispatch(
+      createCategoryListThunk({ userId: user.id, title: titlePrompt.trim() }) as any
+    );
+
+    if (!resultAction.error && resultAction.payload) {
+      dispatch(setSelectedListId(resultAction.payload.id));
+      // Instantly open the newly created dynamic list editor page panel
+      navigate('/list-details');
+    }
+  };
+
+  const handleOpenActiveList = () => {
+    if (activeList) {
+      dispatch(setSelectedListId(activeList.id));
+      navigate('/list-details');
+    }
+  };
+
   return (
-    <div className="home-page">
+    <div className="home-page" style={{ backgroundColor: 'var(--bgPage)' }}>
       <div className="home-container">
         <header className="home-header">
           <div>
@@ -51,7 +66,7 @@ export default function Home() {
             <h1 className="home-title">Shopping overview</h1>
           </div>
 
-          <button type="button" className="primary-button">
+          <button type="button" onClick={handleCreateList} className="primary-button">
             + New List
           </button>
         </header>
@@ -73,31 +88,56 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="list-panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Current list</h2>
-            <span className="panel-badge">{activeList.title}</span>
-          </div>
+        {activeList ? (
+          <section className="list-panel">
+            <div className="panel-header">
+              <div>
+                <h2 className="panel-title">Current list</h2>
+                <span className="panel-badge" style={{ marginTop: '4px', display: 'inline-block' }}>
+                  Category: {activeList.category || 'Sorting...'}
+                </span>
+              </div>
+              <button 
+                type="button" 
+                onClick={handleOpenActiveList}
+                className="primary-button" 
+                style={{ padding: '6px 14px', fontSize: '13px' }}
+              >
+                Open Items ✏️
+              </button>
+            </div>
 
-          <div className="item-list">
-            {activeList.items.length > 0 ? (
-              activeList.items.map((item) => (
-                <div key={item.id} className="item-row">
-                  <span className={item.checked ? 'checkmark checked' : 'checkmark'}>
-                    {item.checked ? '✓' : ''}
-                  </span>
+            <div className="panel-header" style={{ marginBottom: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>{activeList.title}</span>
+            </div>
 
-                  <div className="item-meta">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-qty">{item.quantity} qty</span>
+            <div className="item-list">
+              {activeList.items.length > 0 ? (
+                activeList.items.map((item) => (
+                  <div key={item.id} className="item-row">
+                    <span className={item.checked ? 'checkmark checked' : 'checkmark'}>
+                      {item.checked ? '✓' : ''}
+                    </span>
+
+                    <div className="item-meta">
+                      <span className="item-name">{item.name}</span>
+                      <span className="item-qty">{item.quantity} qty</span>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="empty-state">This list has no items yet.</p>
-            )}
+                ))
+              ) : (
+                <p className="empty-state">This list has no items yet.</p>
+              )}
+            </div>
+          </section>
+        ) : (
+          <div className="list-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <p className="empty-state" style={{ marginBottom: '16px' }}>No shopping lists found for your account.</p>
+            <button type="button" onClick={handleCreateList} className="primary-button" style={{ width: 'auto' }}>
+              Create Your First List
+            </button>
           </div>
-        </section>
+        )}
       </div>
     </div>
   );
