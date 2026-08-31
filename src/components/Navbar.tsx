@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import  { useDispatch } from 'react-redux';
 import { logoutUser } from '../features/store/authSlice';
-import type { RootState, AppDispatch } from '../features/store/store';
+import type {AppDispatch } from '../features/store/store';
 
 export default function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
