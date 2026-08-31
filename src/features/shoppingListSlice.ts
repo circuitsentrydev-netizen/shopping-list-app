@@ -1,7 +1,7 @@
 import { createAsyncThunk, type PayloadAction, createSlice } from '@reduxjs/toolkit';
 import type { ShoppingList } from './shoppingListTypes';
 
-const API_BASE = 'http://localhost:5001';
+const API_BASE = 'http://localhost:3000';
 
 export const autoDetermineCategory = (title: string, items: any[]): string => {
   const compositeText = `${title} ${items.map(i => i.name).join(' ')}`.toLowerCase();
@@ -78,7 +78,18 @@ export const fetchItemsAsync = createAsyncThunk(
 
 export const addItemAsync = createAsyncThunk(
   'shoppingList/addItem',
-  async (payload: { listId: number; name: string; category: string; isChecked: boolean; modifiedAt: string }, { getState }) => {
+  async (
+    payload: { 
+      listId: number; 
+      name: string; 
+      category: string; 
+      isChecked: boolean; 
+      modifiedAt: string;
+      notes?: string;
+      imageUrl?: string;
+    }, 
+    { getState }
+  ) => {
     const state = getState() as any;
     const currentList = state.shoppingItems.lists.find((l: any) => l.id === payload.listId);
     if (!currentList) throw new Error("List not found");
@@ -87,6 +98,8 @@ export const addItemAsync = createAsyncThunk(
       id: Date.now(),
       name: payload.name,
       category: payload.category,
+      notes: payload.notes,
+      imageUrl: payload.imageUrl,
       isChecked: payload.isChecked,
       modifiedAt: payload.modifiedAt
     };
