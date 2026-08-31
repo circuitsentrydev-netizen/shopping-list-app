@@ -15,6 +15,28 @@
       "cellNumber": "0787892134",
       "password": "12345678",
       "id": 2
+    },
+    {
+      "name": "fab",
+      "surname": "forb",
+      "email": "fab@gmail.com",
+      "cellNumber": "0780563783",
+      "password": "123456",
+      "id": 3
+    },
+    {
+      "name": "fab",
+      "email": "fabian@gmail.com",
+      "password": "123456",
+      "createdAt": "2026-08-28T07:47:15.982Z",
+      "id": 4
+    },
+    {
+      "name": "mlab",
+      "email": "mlab@gmail.com",
+      "password": "12345",
+      "createdAt": "2026-08-28T11:53:11.860Z",
+      "id": 5
     }
   ],
   "lists": [
@@ -61,18 +83,181 @@
     {
       "userId": 2,
       "title": "Groceries",
-      "category": "Bakery",
+      "category": "Vegetables",
       "createdAt": "2026-08-27T06:42:28.616Z",
       "items": [
         {
-          "id": 1787812964842,
-          "name": "bread",
+          "id": 1787818185418,
+          "name": "fresh veggies",
           "quantity": 1,
           "checked": false,
-          "modifiedAt": "8/27/2026, 8:42:44 AM"
+          "modifiedAt": "8/27/2026, 10:09:45 AM"
         }
       ],
       "id": 5
+    },
+    {
+      "userId": 2,
+      "title": "Vegetables",
+      "category": "Vegetables",
+      "createdAt": "2026-08-27T08:09:50.132Z",
+      "items": [],
+      "id": 6
+    },
+    {
+      "userId": 2,
+      "title": "Household",
+      "category": "Household",
+      "createdAt": "2026-08-27T08:22:08.596Z",
+      "items": [],
+      "id": 7
+    },
+    {
+      "userId": 2,
+      "title": "Fruits",
+      "category": "Fruits",
+      "createdAt": "2026-08-27T08:24:03.761Z",
+      "items": [
+        {
+          "id": 1787819051434,
+          "name": "10kg apples",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/27/2026, 10:28:51 AM"
+        }
+      ],
+      "id": 8
+    },
+    {
+      "userId": 3,
+      "title": "Groceries",
+      "category": "Groceries",
+      "createdAt": "2026-08-27T09:03:42.974Z",
+      "items": [
+        {
+          "id": 1787821452440,
+          "name": "rice",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "2026-08-28T12:09:20.600Z",
+          "isChecked": true
+        },
+        {
+          "id": 1787829606130,
+          "name": "flour",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/27/2026, 1:20:06 PM",
+          "notes": "baking flour"
+        },
+        {
+          "id": 1787829713935,
+          "name": "curry powder",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/27/2026, 1:21:53 PM"
+        }
+      ],
+      "id": 9
+    },
+    {
+      "userId": 3,
+      "title": "Personal Care",
+      "category": "Personal Care",
+      "createdAt": "2026-08-27T09:04:25.522Z",
+      "items": [],
+      "id": 10
+    },
+    {
+      "userId": 3,
+      "title": "Fruits",
+      "category": "Fruits",
+      "createdAt": "2026-08-27T11:21:59.512Z",
+      "items": [
+        {
+          "id": 1787829728361,
+          "name": "bannanas",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/27/2026, 1:22:08 PM"
+        },
+        {
+          "id": 1787829826284,
+          "name": "oranges",
+          "quantity": 1,
+          "checked": false,
+          "modifiedAt": "8/27/2026, 1:23:46 PM"
+        }
+      ],
+      "id": 11
+    },
+    {
+      "userId": 5,
+      "title": "24x Flying Fish Beer",
+      "category": "Groceries",
+      "createdAt": "2026-08-28T12:15:38.580Z",
+      "items": [],
+      "id": 12
+    },
+    {
+      "userId": 2,
+      "title": "eggs",
+      "category": "Groceries",
+      "createdAt": "2026-08-28T12:32:47.336Z",
+      "items": [
+        {
+          "id": 1787920393419,
+          "name": "vape",
+          "category": "Other",
+          "isChecked": true,
+          "modifiedAt": "2026-08-28T12:33:16.299Z"
+        },
+        {
+          "id": 1787920432007,
+          "name": "10kg  rice",
+          "category": "Groceries",
+          "isChecked": true,
+          "modifiedAt": "2026-08-28T12:34:07.337Z"
+        },
+        {
+          "id": 1787920437216,
+          "name": "5kg sugar",
+          "category": "Groceries",
+          "isChecked": true,
+          "modifiedAt": "2026-08-28T12:34:09.809Z"
+        },
+        {
+          "id": 1787920444497,
+          "name": "5kg oil",
+          "category": "Groceries",
+          "isChecked": false,
+          "modifiedAt": "2026-08-28T12:34:04.496Z"
+        }
+      ],
+      "id": 13
+    },
+    {
+      "userId": 3,
+      "title": "vape",
+      "category": "Groceries",
+      "createdAt": "2026-08-28T12:40:08.508Z",
+      "items": [
+        {
+          "id": 1787920833159,
+          "name": "medical",
+          "category": "Other",
+          "isChecked": true,
+          "modifiedAt": "2026-08-28T12:40:52.769Z"
+        },
+        {
+          "id": 1787920844489,
+          "name": "vape Tango",
+          "category": "Other",
+          "isChecked": true,
+          "modifiedAt": "2026-08-28T12:40:50.929Z"
+        }
+      ],
+      "id": 14
     }
   ]
 }

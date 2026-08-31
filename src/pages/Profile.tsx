@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useAppSelector } from '../features/store/hook';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom'; // ✨ Import useNavigate
-import { updateProfileThunk } from '../features/authSlice';
+import { updateProfileThunk } from '../features/store/authSlice';
 import type { RootState } from '../features/store/store';
 
 export default function Profile() {

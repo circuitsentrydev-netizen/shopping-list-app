@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../features/store/store';
 
