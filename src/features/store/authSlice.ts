@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { updateUserAsync } from './userSlice'; 
 
 // Central Configuration Constants
-const API_BASE = 'http://localhost:5001';
+const API_BASE = 'http://localhost:3000';
 const USER_SESSION_KEY = 'shopping_app_user';
 
 // Safe Error Message Normalization Helper
@@ -36,6 +36,7 @@ export const loginUserThunk = createAsyncThunk(
       if (!response.ok) throw new Error('Database server connection failed.');
       
       const matchedUsers = await response.json();
+      console.log(matchedUsers)
       
       if (matchedUsers.length === 0) {
         throw new Error('Invalid email address or user does not exist.');
