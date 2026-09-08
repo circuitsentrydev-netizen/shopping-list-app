@@ -1,1 +1,19 @@
-export interface ShoppingItem {\n  id: number;\n  name: string;\n  category: string;\n  isChecked: boolean;\n  modifiedAt: string;\n  quantity?: number;\n  notes?: string;\n  imageUrl?: string;\n}\n\nexport interface ShoppingList {\n  id: number;\n  userId: number;\n  title: string;\n  category: string;\n  createdAt: string;\n  items: ShoppingItem[];\n}\n
+export interface ShoppingItem {
+  id: number;
+  name: string;
+  category: string;
+  isChecked: boolean;
+  modifiedAt: string;
+  quantity?: number;
+  notes?: string;
+  imageUrl?: string;
+}
+
+export interface ShoppingList {
+  id: number;
+  userId: number;
+  title: string;
+  category: string;
+  createdAt: string;
+  items: ShoppingItem[];
+}
