@@ -1,153 +1,103 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import '../styles/home.css';
 import { useAppSelector } from '../features/store/hook';
-import { fetchUserListsThunk, createCategoryListThunk, setSelectedListId } from '../features/shoppingListSlice';
+import { createCategoryListThunk, deleteCategoryListThunk, fetchUserListsThunk, setSelectedListId, updateListThunk } from '../features/shoppingListSlice';
 import type { RootState, AppDispatch } from '../features/store/store';
+
+type SortOption = 'title' | 'category' | 'createdAt';
 
 export default function Home() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
   const user = useAppSelector((state: RootState) => state.auth.user);
-  const lists = useAppSelector((state: RootState) => state.shoppingItems.lists) || [];
-  const selectedListId = useAppSelector((state: RootState) => state.shoppingItems.selectedListId);
+  const lists = useAppSelector((state: RootState) => state.shoppingItems.lists);
+  const loading = useAppSelector((state: RootState) => state.shoppingItems.loading);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortBy, setSortBy] = useState<SortOption>('createdAt');
+  const [editingListId, setEditingListId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   useEffect(() => {
-    if (user?.id) {
-      dispatch(fetchUserListsThunk(user.id));
-    }
-  }, [user, dispatch]);
+    if (user?.id) dispatch(fetchUserListsThunk(user.id));
+  }, [dispatch, user?.id]);
 
-  const activeList = lists.find((list) => list.id === selectedListId) || lists[0];
+  const categories = useMemo(() => ['All', ...Array.from(new Set(lists.map((list) => list.category || 'Groceries'))).sort()], [lists]);
+  const visibleLists = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return lists.filter((list) => {
+      const matchesSearch = !query || list.title.toLowerCase().includes(query) || list.category.toLowerCase().includes(query) || list.items.some((item) => item.name.toLowerCase().includes(query));
+      return matchesSearch && (categoryFilter === 'All' || list.category === categoryFilter);
+    }).sort((first, second) => {
+      if (sortBy === 'category') return first.category.localeCompare(second.category) || first.title.localeCompare(second.title);
+      if (sortBy === 'title') return first.title.localeCompare(second.title);
+      return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+    });
+  }, [categoryFilter, lists, searchQuery, sortBy]);
 
-  const totalItems = lists.reduce((sum, list) => sum + (list.items?.length || 0), 0);
-  const checkedItems = lists.reduce(
-    (sum, list) => sum + (list.items?.filter((item) => item.checked).length || 0),
-    0
-  );
-
-  const displayName = user?.name ? `${user.name} ${user.surname ?? ''}`.trim() : 'Guest';
+  const totalItems = lists.reduce((sum, list) => sum + list.items.length, 0);
+  const checkedItems = lists.reduce((sum, list) => sum + list.items.filter((item) => item.isChecked).length, 0);
+  const displayName = user?.name ? String(user.name) : 'Shopper';
 
   const handleCreateList = async () => {
     if (!user?.id) return;
-    
-    const titlePrompt = prompt('Enter a title name for your new shopping list (e.g. Weekly Groceries):');
-    if (!titlePrompt || !titlePrompt.trim()) return;
-
-    const resultAction = await dispatch(
-      createCategoryListThunk({ userId: user.id, title: titlePrompt.trim() })
-    );
-
-    if (createCategoryListThunk.fulfilled.match(resultAction) && resultAction.payload) {
-      dispatch(setSelectedListId(resultAction.payload.id));
-      navigate(`/list/${resultAction.payload.id}`);
+    const title = window.prompt('Enter a name for your new shopping list:')?.trim();
+    if (!title) return;
+    const result = await dispatch(createCategoryListThunk({ userId: user.id, title }));
+    if (createCategoryListThunk.fulfilled.match(result)) {
+      dispatch(setSelectedListId(result.payload.id));
+      navigate('/list/' + result.payload.id);
     }
   };
 
-  const handleOpenActiveList = () => {
-    if (activeList) {
-      dispatch(setSelectedListId(activeList.id));
-      navigate(`/list/${activeList.id}`);
-    }
+  const handleOpenList = (id: number) => { dispatch(setSelectedListId(id)); navigate('/list/' + id); };
+
+  const handleDeleteList = async (id: number) => {
+    if (window.confirm('Delete this list and all of its items?')) await dispatch(deleteCategoryListThunk(id));
+  };
+
+  const startEditingList = (id: number, title: string) => { setEditingListId(id); setEditingTitle(title); };
+
+  const saveListTitle = async (id: number) => {
+    const list = lists.find((entry) => entry.id === id);
+    const title = editingTitle.trim();
+    if (!list || !title) return;
+    await dispatch(updateListThunk({ ...list, title }));
+    setEditingListId(null);
+    setEditingTitle('');
   };
 
   return (
-    <div className="home-page" style={{ backgroundColor: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px' }}>
-      <div className="home-container" style={{ maxWidth: '700px', margin: '0 auto' }}>
-        
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div>
-            <p className="home-eyebrow" style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--textSecondary, #64748b)' }}>Hello, {displayName}</p>
-            <h1 className="home-title" style={{ margin: 0, fontSize: '26px', fontWeight: 'bold' }}>Shopping Overview</h1>
-          </div>
-          <button 
-            type="button" 
-            onClick={handleCreateList} 
-            className="primary-button"
-            style={{ backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-          >
-            + New List
-          </button>
+    <main className="home-page" style={{ backgroundColor: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px 48px' }}>
+      <div className="home-container" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <div><p style={{ margin: '0 0 4px', color: 'var(--textSecondary, #64748b)' }}>Hello, {displayName}</p><h1 style={{ margin: 0, fontSize: '28px' }}>Your shopping lists</h1></div>
+          <button type="button" onClick={handleCreateList} style={{ backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, padding: '11px 16px', borderRadius: '8px', fontWeight: 700 }}>+ New list</button>
         </header>
-
-        <section className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          <div className="summary-card" style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-            <span className="summary-label" style={{ display: 'block', fontSize: '13px', color: '#64748b' }}>Lists</span>
-            <strong className="summary-value" style={{ display: 'block', fontSize: '22px', fontWeight: 'bold', marginTop: '4px' }}>{lists.length}</strong>
-          </div>
-
-          <div className="summary-card" style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-            <span className="summary-label" style={{ display: 'block', fontSize: '13px', color: '#64748b' }}>Items</span>
-            <strong className="summary-value" style={{ display: 'block', fontSize: '22px', fontWeight: 'bold', marginTop: '4px' }}>{totalItems}</strong>
-          </div>
-
-          <div className="summary-card" style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-            <span className="summary-label" style={{ display: 'block', fontSize: '13px', color: '#64748b' }}>Checked</span>
-            <strong className="summary-value" style={{ display: 'block', fontSize: '22px', fontWeight: 'bold', marginTop: '4px' }}>{checkedItems}</strong>
-          </div>
+        <section className="summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', marginBottom: '20px' }}>
+          <div className="summary-card"><span>Lists</span><strong>{lists.length}</strong></div>
+          <div className="summary-card"><span>Items</span><strong>{totalItems}</strong></div>
+          <div className="summary-card"><span>Checked</span><strong>{checkedItems}</strong></div>
         </section>
-
-        {activeList ? (
-          <section className="list-panel" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h2 className="panel-title" style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>Current Workspace</h2>
-                <span className="panel-badge" style={{ marginTop: '4px', display: 'inline-block', fontSize: '12px', backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', color: '#475569' }}>
-                  Category: {activeList.category || 'General'}
-                </span>
-              </div>
-              <button 
-                type="button" 
-                onClick={handleOpenActiveList}
-                className="primary-button" 
-                style={{ padding: '8px 14px', fontSize: '13px', backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Open Items ✏️
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#0f172a' }}>{activeList.title}</span>
-            </div>
-
-            <div className="item-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {activeList.items && activeList.items.length > 0 ? (
-                activeList.items.map((item: any) => (
-                  <div key={item.id} className="item-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', backgroundColor: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span className={item.isChecked ? 'checkmark checked' : 'checkmark'} style={{ color: item.isChecked ? '#2d6a4f' : '#cbd5e1', fontWeight: 'bold' }}>
-                        {item.isChecked ? '✓' : '○'}
-                      </span>
-                      <span className="item-name" style={{ fontSize: '14px', fontWeight: '500', textDecoration: item.isChecked ? 'line-through' : 'none', color: item.isChecked ? '#94a3b8' : '#0f172a' }}>
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className="item-qty" style={{ fontSize: '12px', color: '#64748b', backgroundColor: '#fff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      {item.category || 'General'}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="empty-state" style={{ textAlign: 'center', color: '#64748b', padding: '16px 0', margin: 0, fontSize: '14px' }}>This list has no items yet.</p>
-              )}
-            </div>
-          </section>
-        ) : (
-          <div className="list-panel" style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <p className="empty-state" style={{ marginBottom: '16px', color: '#64748b' }}>No shopping lists found for your account.</p>
-            <button 
-              type="button" 
-              onClick={handleCreateList} 
-              className="primary-button" 
-              style={{ width: 'auto', backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-            >
-              Create Your First List
-            </button>
-          </div>
-        )}
+        <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: '10px', marginBottom: '20px' }}>
+          <input aria-label="Search lists" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search lists or items..." style={{ padding: '11px 13px', borderRadius: '8px', border: '1px solid var(--border)' }} />
+          <select aria-label="Filter by category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} style={{ padding: '11px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff' }}>{categories.map((category) => <option key={category}>{category}</option>)}</select>
+          <select aria-label="Sort lists" value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} style={{ padding: '11px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff' }}><option value="createdAt">Newest</option><option value="title">Name</option><option value="category">Category</option></select>
+        </section>
+        {loading ? <p style={{ textAlign: 'center', color: 'var(--textSecondary)' }}>Loading your lists...</p> : visibleLists.length === 0 ? <section style={{ background: '#fff', padding: '40px 20px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border)' }}><p style={{ color: 'var(--textSecondary)' }}>{lists.length ? 'No lists match your search or category.' : 'You have no shopping lists yet.'}</p><button type="button" onClick={handleCreateList} style={{ backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, padding: '10px 16px', borderRadius: '8px', fontWeight: 700 }}>Create a list</button></section> : <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+          {visibleLists.map((list) => {
+            const checked = list.items.filter((item) => item.isChecked).length;
+            return <article key={list.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px', boxShadow: '0 3px 10px rgba(15, 23, 42, 0.04)' }}>
+              {editingListId === list.id ? <div style={{ display: 'flex', gap: '8px' }}><input autoFocus value={editingTitle} onChange={(event) => setEditingTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveListTitle(list.id); }} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><button type="button" onClick={() => void saveListTitle(list.id)} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 10px' }}>Save</button></div> : <div><h2 style={{ margin: 0, fontSize: '19px' }}>{list.title}</h2><span style={{ color: 'var(--textSecondary)', fontSize: '13px' }}>{list.category}</span></div>}
+              <p style={{ color: 'var(--textSecondary)', fontSize: '13px' }}>{list.items.length} item{list.items.length === 1 ? '' : 's'} · {checked} checked</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><button type="button" onClick={() => handleOpenList(list.id)} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 12px', fontWeight: 600 }}>Open</button><button type="button" onClick={() => startEditingList(list.id, list.title)} style={{ background: '#fff', color: '#334155', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px' }}>Edit</button><button type="button" onClick={() => void handleDeleteList(list.id)} style={{ background: '#fff', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', padding: '8px 12px' }}>Delete</button></div>
+              {list.items.length > 0 && <ul style={{ paddingLeft: '18px', marginBottom: 0, color: 'var(--textSecondary)', fontSize: '13px' }}>{list.items.slice(0, 3).map((item) => <li key={item.id} style={{ textDecoration: item.isChecked ? 'line-through' : 'none' }}>{item.name}</li>)}</ul>}
+            </article>;
+          })}
+        </section>}
       </div>
-    </div>
+    </main>
   );
 }
