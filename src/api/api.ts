@@ -1,1 +1,36 @@
-export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');\n\nexport class ApiError extends Error {\n  status: number;\n\n  constructor(message: string, status: number) {\n    super(message);\n    this.status = status;\n    this.name = 'ApiError';\n  }\n}\n\nexport async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {\n  const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;\n  const response = await fetch(API_URL + formattedEndpoint, {\n    ...options,\n    headers: {\n      'Content-Type': 'application/json',\n      ...options?.headers,\n    },\n  });\n\n  if (!response.ok) {\n    let errorMessage = 'Request failed with status ' + response.status;\n    try {\n      const errorData = await response.json();\n      if (errorData?.message) errorMessage = errorData.message;\n    } catch {\n      errorMessage = 'The server returned an error.';\n    }\n    throw new ApiError(errorMessage, response.status);\n  }\n\n  if (response.status === 204) return undefined as T;\n  return response.json() as Promise<T>;\n}\n
+export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+    this.name = 'ApiError';
+  }
+}
+
+export async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  const response = await fetch(API_URL + formattedEndpoint, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Request failed with status ' + response.status;
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) errorMessage = errorData.message;
+    } catch {
+      errorMessage = 'The server returned an error.';
+    }
+    throw new ApiError(errorMessage, response.status);
+  }
+
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
