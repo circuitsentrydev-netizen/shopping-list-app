@@ -41,7 +41,9 @@ export default function ShoppingListItems() {
     }).sort((first, second) => {
       if (sortBy === 'status') return Number(first.isChecked) - Number(second.isChecked);
       if (sortBy === 'modifiedAt') return new Date(second.modifiedAt).getTime() - new Date(first.modifiedAt).getTime();
-      return first[sortBy].localeCompare(second[sortBy]);
+      const left = sortBy === 'name' ? first.name : sortBy === 'category' ? first.category : first.modifiedAt;
+      const right = sortBy === 'name' ? second.name : sortBy === 'category' ? second.category : second.modifiedAt;
+      return left.localeCompare(right);
     });
   }, [categoryFilter, listItems, searchQuery, sortBy]);
 
