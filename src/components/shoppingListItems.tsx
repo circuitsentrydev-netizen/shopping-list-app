@@ -1,246 +1,131 @@
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '../features/store/store';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../features/store/hook';
+import { addItemAsync, deleteItemAsync, fetchItemsAsync, toggleItemAsync, updateItemAsync } from '../features/shoppingListSlice';
+import type { RootState } from '../features/store/store';
+import type { ShoppingItem } from '../features/shoppingListTypes';
 
-import { 
-  fetchItemsAsync, 
-  addItemAsync, 
-  toggleItemAsync, 
-  deleteItemAsync 
-} from '../features/shoppingListSlice';
+type ItemSort = 'name' | 'category' | 'status' | 'modifiedAt';
+const itemCategories = ['Groceries', 'Produce', 'Household', 'Personal Care', 'Bakery', 'Fruits', 'Snacks', 'Other'];
 
 export default function ShoppingListItems() {
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { items, loading } = useSelector((state: RootState) => state.shoppingItems);
-  
-  // Form State
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state: RootState) => state.auth.user);
+  const { lists, items, loading, error } = useAppSelector((state: RootState) => state.shoppingItems);
+  const activeList = lists.find((list) => list.id === Number(listId));
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('Groceries');
   const [newItemNotes, setNewItemNotes] = useState('');
-  const [newItemImage, setNewItemImage] = useState<string | null>(null);
-
-  // Search State
+  const [newItemImage, setNewItemImage] = useState<string>();
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortBy, setSortBy] = useState<ItemSort>('name');
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [editingCategory, setEditingCategory] = useState('Groceries');
+  const [editingNotes, setEditingNotes] = useState('');
 
   useEffect(() => {
-    if (listId) {
-      dispatch(fetchItemsAsync(Number(listId)));
-    }
-  }, [listId, dispatch]);
+    if (listId) void dispatch(fetchItemsAsync(Number(listId)));
+  }, [dispatch, listId]);
 
-  // Convert uploaded image file into a Base64 string for json-server
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewItemImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const listItems = activeList?.items ?? items;
+  const categories = useMemo(() => ['All', ...Array.from(new Set(listItems.map((item) => item.category))).sort()], [listItems]);
+  const visibleItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return listItems.filter((item) => {
+      const matchesSearch = !query || [item.name, item.category, item.notes ?? ''].some((value) => value.toLowerCase().includes(query));
+      return matchesSearch && (categoryFilter === 'All' || item.category === categoryFilter);
+    }).sort((first, second) => {
+      if (sortBy === 'status') return Number(first.isChecked) - Number(second.isChecked);
+      if (sortBy === 'modifiedAt') return new Date(second.modifiedAt).getTime() - new Date(first.modifiedAt).getTime();
+      return first[sortBy].localeCompare(second[sortBy]);
+    });
+  }, [categoryFilter, listItems, searchQuery, sortBy]);
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setNewItemImage(String(reader.result));
+    reader.readAsDataURL(file);
   };
 
-  const handleAddItem = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newItemName.trim() || !user || !listId) return;
-
-    const payload = {
-      listId: Number(listId),
-      name: newItemName.trim(),
-      category: newItemCategory,
-      notes: newItemNotes.trim() || undefined,
-      imageUrl: newItemImage || undefined,
-      isChecked: false,
-      modifiedAt: new Date().toISOString()
-    };
-
-    await dispatch(addItemAsync(payload));
-
-    // Reset Form Fields
-    setNewItemName('');
-    setNewItemNotes('');
-    setNewItemImage(null);
-  };
-
-  const handleToggleCheck = async (itemId: number, currentCheckedStatus: boolean) => {
-    if (!listId) return;
-    await dispatch(toggleItemAsync({ 
-      listId: Number(listId),
-      itemId, 
-      isChecked: !currentCheckedStatus 
-    }));
-  };
-
-  const handleDeleteItem = async (itemId: number) => {
-    if (!listId) return;
-    if (window.confirm("Remove item from shopping list?")) {
-      await dispatch(deleteItemAsync({ listId: Number(listId), itemId }));
+  const handleAddItem = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!newItemName.trim() || !listId || !user) return;
+    const result = await dispatch(addItemAsync({ listId: Number(listId), name: newItemName.trim(), category: newItemCategory, notes: newItemNotes.trim() || undefined, imageUrl: newItemImage }));
+    if (addItemAsync.fulfilled.match(result)) {
+      setNewItemName('');
+      setNewItemNotes('');
+      setNewItemImage(undefined);
     }
   };
 
-  // Filter items by search query (matches name or category)
-  const filteredItems = (items || []).filter((item: any) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleToggle = (item: ShoppingItem) => {
+    if (listId) void dispatch(toggleItemAsync({ listId: Number(listId), itemId: item.id, isChecked: !item.isChecked }));
+  };
+
+  const handleDelete = (itemId: number) => {
+    if (listId && window.confirm('Remove this item from the list?')) void dispatch(deleteItemAsync({ listId: Number(listId), itemId }));
+  };
+
+  const startEditing = (item: ShoppingItem) => {
+    setEditingItemId(item.id);
+    setEditingName(item.name);
+    setEditingCategory(item.category);
+    setEditingNotes(item.notes ?? '');
+  };
+
+  const saveEdit = async (item: ShoppingItem) => {
+    if (!listId || !editingName.trim()) return;
+    const result = await dispatch(updateItemAsync({ listId: Number(listId), item: { ...item, name: editingName.trim(), category: editingCategory, notes: editingNotes.trim() || undefined } }));
+    if (updateItemAsync.fulfilled.match(result)) {
+      setEditingItemId(null);
+      setEditingName('');
+      setEditingNotes('');
+    }
+  };
+
+  const handleShare = async () => {
+    if (!activeList) return;
+    const text = activeList.title + '\n\n' + activeList.items.map((item) => (item.isChecked ? '[x] ' : '[ ] ') + item.name + ' — ' + item.category + (item.notes ? ' (' + item.notes + ')' : '')).join('\n');
+    try {
+      if (navigator.share) await navigator.share({ title: activeList.title, text });
+      else {
+        await navigator.clipboard.writeText(text);
+        window.alert('List copied to your clipboard.');
+      }
+    } catch {
+      return;
+    }
+  };
+
+  if (!activeList && !loading) return <main style={{ padding: '40px', textAlign: 'center' }}><p>This list could not be found.</p><button type="button" onClick={() => navigate('/home')}>Back to lists</button></main>;
 
   return (
-    <div style={{ backgroundColor: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        
-        {/* Header Navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <button 
-            onClick={() => navigate('/home')}
-            style={{ background: 'none', border: 'none', color: 'var(--primaryGreen, #2d6a4f)', fontWeight: '600', cursor: 'pointer' }}
-          >
-            ← Back to Dash
-          </button>
-          <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--primaryGreen, #2d6a4f)' }}>List Workspace</h2>
-        </div>
+    <main style={{ backgroundColor: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px 48px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <div><button type="button" onClick={() => navigate('/home')} style={{ border: 0, background: 'none', padding: 0, color: 'var(--primaryGreen, #2d6a4f)', fontWeight: 700 }}>← Back to lists</button><h1 style={{ margin: '8px 0 0', fontSize: '28px' }}>{activeList?.title}</h1><span style={{ color: 'var(--textSecondary)' }}>{activeList?.category}</span></div>
+          <button type="button" onClick={() => void handleShare()} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, padding: '10px 14px', borderRadius: '8px', fontWeight: 700 }}>Share list</button>
+        </header>
 
-        {/* Search Input Bar */}
-        <div style={{ marginBottom: '20px' }}>
-          <input 
-            type="text" 
-            placeholder="🔍 Search items in this list..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', boxSizing: 'border-box' }}
-          />
-        </div>
-
-        {/* Add Item Form with Notes & Image Upload */}
-        <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input 
-              type="text" 
-              placeholder="Item name..." 
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              style={{ flex: 2, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-              required
-            />
-            <select 
-              value={newItemCategory} 
-              onChange={(e) => setNewItemCategory(e.target.value)}
-              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff' }}
-            >
-              <option value="Groceries">Groceries</option>
-              <option value="Household">Household</option>
-              <option value="Produce">Produce</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <input 
-            type="text" 
-            placeholder="Optional notes (brand, quantity, etc.)..." 
-            value={newItemNotes}
-            onChange={(e) => setNewItemNotes(e.target.value)}
-            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box' }}
-          />
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <label style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer', fontWeight: '500' }}>
-                📷 Add Image
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: 'none' }}
-                />
-              </label>
-              {newItemImage && (
-                <span style={{ fontSize: '12px', color: '#2d6a4f', fontWeight: '600' }}>✓ Loaded</span>
-              )}
-            </div>
-
-            <button 
-              type="submit"
-              style={{ backgroundColor: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-            >
-              Add Item
-            </button>
-          </div>
+        <form onSubmit={handleAddItem} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px' }}><input required value={newItemName} onChange={(event) => setNewItemName(event.target.value)} placeholder="Add an item..." style={{ padding: '10px', borderRadius: '7px', border: '1px solid var(--border)' }} /><select value={newItemCategory} onChange={(event) => setNewItemCategory(event.target.value)} style={{ padding: '10px', borderRadius: '7px', border: '1px solid var(--border)', background: '#fff' }}>{itemCategories.map((category) => <option key={category}>{category}</option>)}</select></div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}><input value={newItemNotes} onChange={(event) => setNewItemNotes(event.target.value)} placeholder="Notes, brand, or quantity..." style={{ flex: 1, padding: '9px', borderRadius: '7px', border: '1px solid var(--border)' }} /><label style={{ padding: '9px 12px', border: '1px dashed var(--border)', borderRadius: '7px', color: 'var(--textSecondary)', cursor: 'pointer' }}>Add image<input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} /></label><button type="submit" style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '7px', padding: '9px 14px', fontWeight: 700 }}>Add</button></div>
         </form>
 
-        {/* List Items Display */}
-        {loading ? (
-          <p style={{ textAlign: 'center', color: '#64748b' }}>Loading items...</p>
-        ) : filteredItems.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#64748b', padding: '20px 0' }}>
-            {searchQuery ? 'No items match your search.' : 'No items in this list yet. Start adding above!'}
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {filteredItems.map((item: any) => (
-              <div 
-                key={item.id} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  border: '1px solid #e2e8f0',
-                  backgroundColor: item.isChecked ? '#f8fafc' : '#ffffff' 
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={item.isChecked}
-                    onChange={() => handleToggleCheck(item.id, item.isChecked)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  
-                  {/* Thumbnail Preview */}
-                  {item.imageUrl && (
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.name} 
-                      style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }}
-                    />
-                  )}
-
-                  <div>
-                    <span style={{ 
-                      fontWeight: '500', 
-                      textDecoration: item.isChecked ? 'line-through' : 'none',
-                      color: item.isChecked ? '#94a3b8' : '#0f172a'
-                    }}>
-                      {item.name}
-                    </span>
-                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>
-                      {item.category}
-                    </span>
-                    {item.notes && (
-                      <span style={{ display: 'block', fontSize: '12px', color: '#475569', fontStyle: 'italic', marginTop: '2px' }}>
-                        "{item.notes}"
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => handleDeleteItem(item.id)}
-                  style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', padding: '4px' }}
-                >
-                  🗑
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
+        <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: '8px', marginBottom: '18px' }}><input aria-label="Search items" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search items, categories, or notes..." style={{ padding: '10px', borderRadius: '7px', border: '1px solid var(--border)' }} /><select aria-label="Filter items by category" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} style={{ padding: '10px', borderRadius: '7px', border: '1px solid var(--border)', background: '#fff' }}>{categories.map((category) => <option key={category}>{category}</option>)}</select><select aria-label="Sort items" value={sortBy} onChange={(event) => setSortBy(event.target.value as ItemSort)} style={{ padding: '10px', borderRadius: '7px', border: '1px solid var(--border)', background: '#fff' }}><option value="name">Name</option><option value="category">Category</option><option value="status">Unchecked first</option><option value="modifiedAt">Recently changed</option></select></section>
+        {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
+        {loading ? <p style={{ textAlign: 'center', color: 'var(--textSecondary)' }}>Loading items...</p> : visibleItems.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--textSecondary)' }}>{searchQuery || categoryFilter !== 'All' ? 'No items match your filters.' : 'No items in this list yet.'}</p> : <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {visibleItems.map((item) => <article key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px' }}>
+            {editingItemId === item.id ? <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px', width: '100%' }}><input value={editingName} onChange={(event) => setEditingName(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><select value={editingCategory} onChange={(event) => setEditingCategory(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: '#fff' }}>{itemCategories.map((category) => <option key={category}>{category}</option>)}</select><input value={editingNotes} onChange={(event) => setEditingNotes(event.target.value)} placeholder="Notes" style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => void saveEdit(item)} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 10px' }}>Save</button><button type="button" onClick={() => setEditingItemId(null)} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 10px' }}>Cancel</button></div></div> : <><div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}><input type="checkbox" checked={item.isChecked} onChange={() => handleToggle(item)} aria-label={'Mark ' + item.name + ' complete'} />{item.imageUrl && <img src={item.imageUrl} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />}<div style={{ minWidth: 0 }}><strong style={{ textDecoration: item.isChecked ? 'line-through' : 'none', color: item.isChecked ? '#94a3b8' : 'inherit' }}>{item.name}</strong><span style={{ display: 'block', fontSize: '12px', color: 'var(--textSecondary)' }}>{item.category}{item.notes ? ' · ' + item.notes : ''}</span></div></div><div style={{ display: 'flex', gap: '4px' }}><button type="button" onClick={() => startEditing(item)} aria-label={'Edit ' + item.name} style={{ border: 0, background: 'none', padding: '6px' }}>Edit</button><button type="button" onClick={() => handleDelete(item.id)} aria-label={'Delete ' + item.name} style={{ border: 0, background: 'none', color: '#b91c1c', padding: '6px' }}>Delete</button></div></>}
+          </article>)}
+        </section>}
       </div>
-    </div>
+    </main>
   );
 }
