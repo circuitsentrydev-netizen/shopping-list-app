@@ -7,7 +7,7 @@ A React and TypeScript shopping list app for creating lists, managing items, fil
 Install packages:
 
 
-a npm install
+npm install
 
 Start the JSON Server database in one terminal:
 
