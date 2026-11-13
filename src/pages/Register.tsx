@@ -1,14 +1,15 @@
+
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../features/store/store';
 import { registerUserThunk } from '../features/store/authSlice';
+import Footer from '../components/Footer';
 
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  
-  // Connect to your central Redux auth state
+
   const { error, loading } = useSelector((state: RootState) => state.auth);
 
   const [name, setName] = useState('');
@@ -25,12 +26,10 @@ export default function Register() {
       createdAt: new Date().toISOString()
     };
 
-    // Dispatch the central slice register thunk
     const resultAction = await dispatch(registerUserThunk(newUserPayload));
 
-    // Route cleanly to login or home upon successful store inclusion
     if (registerUserThunk.fulfilled.match(resultAction)) {
-      navigate('/login'); 
+      navigate('/login');
     }
   };
 
@@ -68,6 +67,7 @@ export default function Register() {
           Already have an account? <Link to="/login" style={{ color: 'var(--primaryGreen, #2d6a4f)', fontWeight: '600' }}>Sign In</Link>
         </p>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -1,8 +1,10 @@
+
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../features/store/store';
 import { loginUserThunk } from '../features/store/authSlice';
+import Footer from '../components/Footer';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ export default function Login() {
         </form>
         <p style={{ textAlign: 'center', fontSize: '13px', marginTop: '20px', color: '#64748b' }}>Don't have an account? <Link to="/register" style={{ color: 'var(--primaryGreen, #2d6a4f)', fontWeight: '600' }}>Register</Link></p>
       </div>
+      <Footer />
     </div>
   );
 }

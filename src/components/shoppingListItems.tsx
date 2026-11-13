@@ -1,9 +1,11 @@
+
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../features/store/hook';
 import { addItemAsync, deleteItemAsync, fetchItemsAsync, toggleItemAsync, updateItemAsync } from '../features/shoppingListSlice';
 import type { RootState } from '../features/store/store';
-import type { ShoppingItem } from '../features/shoppingListTypes';
+import type { RecordId, ShoppingItem } from '../features/shoppingListTypes';
+import Icon from './Icon';
 
 type ItemSort = 'name' | 'category' | 'status' | 'modifiedAt';
 const itemCategories = ['Groceries', 'Produce', 'Household', 'Personal Care', 'Bakery', 'Fruits', 'Snacks', 'Other'];
@@ -14,7 +16,7 @@ export default function ShoppingListItems() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state: RootState) => state.auth.user);
   const { lists, items, loading, error } = useAppSelector((state: RootState) => state.shoppingItems);
-  const activeList = lists.find((list) => list.id === Number(listId));
+  const activeList = lists.find((list) => String(list.id) === String(listId));
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('Groceries');
   const [newItemNotes, setNewItemNotes] = useState('');
@@ -22,13 +24,13 @@ export default function ShoppingListItems() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortBy, setSortBy] = useState<ItemSort>('name');
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingItemId, setEditingItemId] = useState<RecordId | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingCategory, setEditingCategory] = useState('Groceries');
   const [editingNotes, setEditingNotes] = useState('');
 
   useEffect(() => {
-    if (listId) void dispatch(fetchItemsAsync(Number(listId)));
+    if (listId) void dispatch(fetchItemsAsync(listId));
   }, [dispatch, listId]);
 
   const listItems = activeList?.items ?? items;
@@ -58,7 +60,8 @@ export default function ShoppingListItems() {
   const handleAddItem = async (event: FormEvent) => {
     event.preventDefault();
     if (!newItemName.trim() || !listId || !user) return;
-    const result = await dispatch(addItemAsync({ listId: Number(listId), name: newItemName.trim(), category: newItemCategory, notes: newItemNotes.trim() || undefined, imageUrl: newItemImage }));
+    const savedPreferences = JSON.parse(localStorage.getItem('fabshoplist_settings') ?? '{}');
+    const result = await dispatch(addItemAsync({ listId, name: newItemName.trim(), category: newItemCategory, quantity: Number(savedPreferences.defaultQuantity) || 1, notes: newItemNotes.trim() || undefined, imageUrl: newItemImage }));
     if (addItemAsync.fulfilled.match(result)) {
       setNewItemName('');
       setNewItemNotes('');
@@ -67,11 +70,11 @@ export default function ShoppingListItems() {
   };
 
   const handleToggle = (item: ShoppingItem) => {
-    if (listId) void dispatch(toggleItemAsync({ listId: Number(listId), itemId: item.id, isChecked: !item.isChecked }));
+    if (listId) void dispatch(toggleItemAsync({ listId, itemId: item.id, isChecked: !item.isChecked }));
   };
 
-  const handleDelete = (itemId: number) => {
-    if (listId && window.confirm('Remove this item from the list?')) void dispatch(deleteItemAsync({ listId: Number(listId), itemId }));
+  const handleDelete = (itemId: RecordId) => {
+    if (listId && window.confirm('Remove this item from the list?')) void dispatch(deleteItemAsync({ listId, itemId }));
   };
 
   const startEditing = (item: ShoppingItem) => {
@@ -83,7 +86,7 @@ export default function ShoppingListItems() {
 
   const saveEdit = async (item: ShoppingItem) => {
     if (!listId || !editingName.trim()) return;
-    const result = await dispatch(updateItemAsync({ listId: Number(listId), item: { ...item, name: editingName.trim(), category: editingCategory, notes: editingNotes.trim() || undefined } }));
+    const result = await dispatch(updateItemAsync({ listId, item: { ...item, name: editingName.trim(), category: editingCategory, notes: editingNotes.trim() || undefined } }));
     if (updateItemAsync.fulfilled.match(result)) {
       setEditingItemId(null);
       setEditingName('');
@@ -112,7 +115,7 @@ export default function ShoppingListItems() {
       <div style={{ maxWidth: '760px', margin: '0 auto' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
           <div><button type="button" onClick={() => navigate('/home')} style={{ border: 0, background: 'none', padding: 0, color: 'var(--primaryGreen, #2d6a4f)', fontWeight: 700 }}>← Back to lists</button><h1 style={{ margin: '8px 0 0', fontSize: '28px' }}>{activeList?.title}</h1><span style={{ color: 'var(--textSecondary)' }}>{activeList?.category}</span></div>
-          <button type="button" onClick={() => void handleShare()} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, padding: '10px 14px', borderRadius: '8px', fontWeight: 700 }}>Share list</button>
+          <button type="button" onClick={() => void handleShare()} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, padding: '10px 14px', borderRadius: '8px', fontWeight: 700 }}><Icon name="share" size={17}/> Share list</button>
         </header>
 
         <form onSubmit={handleAddItem} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '18px' }}>
@@ -124,7 +127,7 @@ export default function ShoppingListItems() {
         {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
         {loading ? <p style={{ textAlign: 'center', color: 'var(--textSecondary)' }}>Loading items...</p> : visibleItems.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--textSecondary)' }}>{searchQuery || categoryFilter !== 'All' ? 'No items match your filters.' : 'No items in this list yet.'}</p> : <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {visibleItems.map((item) => <article key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px' }}>
-            {editingItemId === item.id ? <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px', width: '100%' }}><input value={editingName} onChange={(event) => setEditingName(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><select value={editingCategory} onChange={(event) => setEditingCategory(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: '#fff' }}>{itemCategories.map((category) => <option key={category}>{category}</option>)}</select><input value={editingNotes} onChange={(event) => setEditingNotes(event.target.value)} placeholder="Notes" style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => void saveEdit(item)} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 10px' }}>Save</button><button type="button" onClick={() => setEditingItemId(null)} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 10px' }}>Cancel</button></div></div> : <><div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}><input type="checkbox" checked={item.isChecked} onChange={() => handleToggle(item)} aria-label={'Mark ' + item.name + ' complete'} />{item.imageUrl && <img src={item.imageUrl} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />}<div style={{ minWidth: 0 }}><strong style={{ textDecoration: item.isChecked ? 'line-through' : 'none', color: item.isChecked ? '#94a3b8' : 'inherit' }}>{item.name}</strong><span style={{ display: 'block', fontSize: '12px', color: 'var(--textSecondary)' }}>{item.category}{item.notes ? ' · ' + item.notes : ''}</span></div></div><div style={{ display: 'flex', gap: '4px' }}><button type="button" onClick={() => startEditing(item)} aria-label={'Edit ' + item.name} style={{ border: 0, background: 'none', padding: '6px' }}>Edit</button><button type="button" onClick={() => handleDelete(item.id)} aria-label={'Delete ' + item.name} style={{ border: 0, background: 'none', color: '#b91c1c', padding: '6px' }}>Delete</button></div></>}
+            {editingItemId === item.id ? <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '8px', width: '100%' }}><input value={editingName} onChange={(event) => setEditingName(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><select value={editingCategory} onChange={(event) => setEditingCategory(event.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: '#fff' }}>{itemCategories.map((category) => <option key={category}>{category}</option>)}</select><input value={editingNotes} onChange={(event) => setEditingNotes(event.target.value)} placeholder="Notes" style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }} /><div style={{ display: 'flex', gap: '6px' }}><button type="button" onClick={() => void saveEdit(item)} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '6px', padding: '8px 10px' }}>Save</button><button type="button" onClick={() => setEditingItemId(null)} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 10px' }}>Cancel</button></div></div> : <><div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}><input type="checkbox" checked={item.isChecked} onChange={() => handleToggle(item)} aria-label={'Mark ' + item.name + ' complete'} />{item.imageUrl && <img src={item.imageUrl} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />}<div style={{ minWidth: 0 }}><strong style={{ textDecoration: item.isChecked ? 'line-through' : 'none', color: item.isChecked ? '#94a3b8' : 'inherit' }}>{item.name}</strong><span style={{ display: 'block', fontSize: '12px', color: 'var(--textSecondary)' }}>{item.category}{item.notes ? ' · ' + item.notes : ''}</span></div></div><div style={{ display: 'flex', gap: '4px' }}><button type="button" onClick={() => startEditing(item)} aria-label={'Edit ' + item.name} style={{ border: 0, background: 'none', padding: '6px' }}><Icon name="edit" size={17}/></button><button type="button" onClick={() => handleDelete(item.id)} aria-label={'Delete ' + item.name} style={{ border: 0, background: 'none', color: '#b91c1c', padding: '6px' }}><Icon name="trash" size={17}/></button></div></>}
           </article>)}
         </section>}
       </div>

@@ -1,15 +1,71 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../features/store/store';
+
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../features/store/hook';
+import Icon from '../components/Icon';
+import Footer from '../components/Footer';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const authenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
-  useEffect(() => {
-    if (isAuthenticated) navigate('/home', { replace: true });
-  }, [isAuthenticated, navigate]);
+  if (authenticated) return <Navigate to="/home" replace/>;
 
-  return <main style={{ background: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px', color: 'var(--textPrimary, #0f172a)' }}><header style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><strong style={{ color: 'var(--primaryGreen, #2d6a4f)', fontSize: '22px' }}>🧺 FabShopList</strong><button type="button" onClick={() => navigate('/login')} style={{ border: 0, background: 'none', color: 'var(--primaryGreen, #2d6a4f)', fontWeight: 700 }}>Log in</button></header><section style={{ maxWidth: '700px', margin: '80px auto 0', textAlign: 'center' }}><div style={{ fontSize: '56px' }}>📝</div><h1 style={{ fontSize: 'clamp(32px, 7vw, 52px)', lineHeight: 1.1, margin: '16px 0' }}>Shop smarter with lists that stay organized.</h1><p style={{ maxWidth: '520px', margin: '0 auto 28px', color: 'var(--textSecondary, #64748b)', fontSize: '16px' }}>Create lists, find items quickly, sort by category, edit as you shop, and share with the people heading to the store.</p><button type="button" onClick={() => navigate('/register')} style={{ background: 'var(--primaryGreen, #2d6a4f)', color: '#fff', border: 0, borderRadius: '9px', padding: '14px 28px', fontWeight: 700, fontSize: '16px' }}>Continue</button></section></main>;
+  return (
+    <div className="landing-page">
+      <header className="landing-header">
+        <a className="brand" href="/">
+          <span className="brand-mark"><Icon name="basket"/></span>
+          FabShop<span className="brand-light">List</span>
+        </a>
+        <button className="landing-login" onClick={() => navigate('/login')}>Log in</button>
+      </header>
+
+      <main className="landing-hero">
+        <div className="hero-copy">
+          <span className="hero-kicker"><Icon name="sparkles" size={15}/> A simpler way to shop</span>
+          <h1>Every list in order.<br/><span>Every shop, smarter.</span></h1>
+          <p>Plan your shopping, keep track of what you need, and tick items off as you go. FabShopList makes everyday shopping feel more organised.</p>
+          <div className="hero-actions">
+            <button className="hero-primary" onClick={() => navigate('/register')}>Get started <Icon name="chevron-right" size={18}/></button>
+            <button className="hero-secondary" onClick={() => navigate('/login')}>I already have an account</button>
+          </div>
+          <div className="hero-benefits">
+            <span><Icon name="check" size={16}/> Organised lists</span>
+            <span><Icon name="check" size={16}/> Easy tracking</span>
+            <span><Icon name="check" size={16}/> Shareable</span>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="visual-glow"/>
+          <div className="preview-card">
+            <div className="preview-top">
+              <div><small>YOUR SHOPPING LIST</small><h3>Weekend groceries</h3></div>
+              <span className="preview-icon"><Icon name="basket" size={22}/></span>
+            </div>
+            <div className="preview-progress"><span/><span/><span/><span/></div>
+            <p className="preview-count">3 of 5 items completed</p>
+            {[
+              ['Avocados', 'Produce', true],
+              ['Wholegrain bread', 'Bakery', true],
+              ['Fresh milk', 'Dairy', true],
+              ['Free-range eggs', 'Dairy', false],
+              ['Olive oil', 'Pantry', false]
+            ].map(([name, category, done]) => (
+              <div className={`preview-item ${done ? 'is-done' : ''}`} key={String(name)}>
+                <span className="preview-check">{done && <Icon name="check" size={13}/>}</span>
+                <span><b>{name}</b><small>{category}</small></span>
+              </div>
+            ))}
+            <div className="preview-foot"><Icon name="sparkles" size={15}/> A little more organised, every day.</div>
+          </div>
+          <div className="floating-note">
+            <span className="floating-check"><Icon name="check"/></span>
+            <span><b>Nice work!</b><small>You're making progress</small></span>
+          </div>
+        </div>
+      </main>
+      <Footer/>
+    </div>
+  );
 }
