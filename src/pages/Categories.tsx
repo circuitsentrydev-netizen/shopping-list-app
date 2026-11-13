@@ -1,34 +1,37 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../features/store/hook';
 import { createCategoryListThunk, fetchUserListsThunk, setSelectedListId } from '../features/shoppingListSlice';
-import type { RootState } from '../features/store/store';
+import Icon from '../components/Icon';
+import type { RecordId } from '../features/shoppingListTypes';
 
-const categories = ['Groceries', 'Vegetables', 'Household', 'Personal Care', 'Bakery', 'Fruits', 'Snacks'];
-const icons: Record<string, string> = { Groceries: '🛒', Vegetables: '🥦', Household: '🧼', 'Personal Care': '🧴', Bakery: '🥐', Fruits: '🍎', Snacks: '🍪' };
+const categories = [
+  { name: 'Groceries', icon: 'basket' as const, description: 'Everyday essentials and pantry items' },
+  { name: 'Vegetables', icon: 'leaf' as const, description: 'Fresh vegetables and produce' },
+  { name: 'Household', icon: 'house' as const, description: 'Cleaning and home essentials' },
+  { name: 'Personal Care', icon: 'user' as const, description: 'Your daily personal essentials' },
+  { name: 'Bakery', icon: 'package' as const, description: 'Bread, pastries and baked goods' },
+  { name: 'Fruits', icon: 'sparkles' as const, description: 'Fresh fruit and healthy snacks' },
+  { name: 'Snacks', icon: 'shopping-bag' as const, description: 'Treats and quick bites' },
+];
 
 export default function Categories() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const user = useAppSelector((state: RootState) => state.auth.user);
-  const lists = useAppSelector((state: RootState) => state.shoppingItems.lists);
-
-  useEffect(() => {
-    if (user?.id) void dispatch(fetchUserListsThunk(user.id));
-  }, [dispatch, user?.id]);
+  const user = useAppSelector((state) => state.auth.user);
+  const lists = useAppSelector((state) => state.shoppingItems.lists);
+  useEffect(() => { if (user?.id) void dispatch(fetchUserListsThunk(user.id as RecordId)); }, [dispatch, user?.id]);
 
   const openCategory = async (category: string) => {
     if (!user?.id) return;
     let list = lists.find((entry) => entry.title.toLowerCase() === category.toLowerCase());
     if (!list) {
-      const result = await dispatch(createCategoryListThunk({ userId: user.id, title: category }));
+      const result = await dispatch(createCategoryListThunk({ userId: user.id as RecordId, title: category }));
       if (createCategoryListThunk.fulfilled.match(result)) list = result.payload;
     }
-    if (list) {
-      dispatch(setSelectedListId(list.id));
-      navigate('/list/' + list.id);
-    }
+    if (list) { dispatch(setSelectedListId(list.id)); navigate(`/list/${encodeURIComponent(String(list.id))}`); }
   };
 
-  return <main style={{ background: 'var(--bgPage, #f8fafc)', minHeight: '100vh', padding: '24px 16px' }}><div style={{ maxWidth: '700px', margin: '0 auto' }}><button type="button" onClick={() => navigate('/home')} style={{ background: 'none', border: 0, color: 'var(--primaryGreen, #2d6a4f)', fontWeight: 700 }}>← Back to lists</button><h1>Categories</h1><section style={{ display: 'grid', gap: '12px' }}>{categories.map((category) => { const list = lists.find((entry) => entry.title.toLowerCase() === category.toLowerCase()); return <button key={category} type="button" onClick={() => void openCategory(category)} style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', background: '#fff', border: '1px solid var(--border)', borderRadius: '10px', padding: '16px' }}><span style={{ fontSize: '24px' }}>{icons[category]}</span><span><strong>{category}</strong><small style={{ display: 'block', color: 'var(--textSecondary)' }}>{list?.items.length ?? 0} items</small></span></button>; })}</section></div></main>;
+  return <main className="page-shell"><div className="page-container categories-page"><header className="page-heading"><span className="eyebrow">BROWSE YOUR SHOPPING</span><h1>Categories</h1><p>Choose a category to open its shopping list.</p></header><section className="category-grid">{categories.map((category) => { const list = lists.find((entry) => entry.title.toLowerCase() === category.name.toLowerCase()); return <button className="category-card" type="button" key={category.name} onClick={() => void openCategory(category.name)}><span className="category-icon"><Icon name={category.icon} size={23}/></span><span className="category-copy"><strong>{category.name}</strong><small>{category.description}</small><em>{list?.items.length ?? 0} items</em></span><Icon name="chevron-right" className="category-arrow"/></button>; })}</section></div></main>;
 }

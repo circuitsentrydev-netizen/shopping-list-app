@@ -1,5 +1,8 @@
+
+export type RecordId = string | number;
+
 export interface ShoppingItem {
-  id: number;
+  id: RecordId;
   name: string;
   category: string;
   isChecked: boolean;
@@ -10,8 +13,8 @@ export interface ShoppingItem {
 }
 
 export interface ShoppingList {
-  id: number;
-  userId: number;
+  id: RecordId;
+  userId: RecordId;
   title: string;
   category: string;
   createdAt: string;
