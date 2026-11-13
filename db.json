@@ -1,5 +1,5 @@
 {
-  "users":  [
+  "users": [
     {
       "name": "musa",
       "surname": "bl",
@@ -45,6 +45,13 @@
       "email": "sam@gmail.com",
       "password": "$2b$10$QwhERr38vXsyTbgwyaDDr.yypuUryyBVNkMuS5TJn8Dse9UOixkEK",
       "id": "FXCOEvJjlk0"
+    },
+    {
+      "name": "fabss",
+      "email": "fabss@gmail.com",
+      "password": "12345678",
+      "createdAt": "2026-11-13T11:49:57.355Z",
+      "id": "2tv7PhQ"
     }
   ],
   "lists": [
@@ -290,8 +297,15 @@
       "category": "Household",
       "createdAt": "2026-09-09T12:23:38.404Z",
       "updatedAt": "2026-09-09T12:23:38.404Z"
+    },
+    {
+      "userId": "2tv7PhQ",
+      "title": "apples",
+      "category": "Fruits",
+      "createdAt": "2026-11-13T11:50:39.128Z",
+      "items": [],
+      "id": "Qm2RoqB"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
-
 }
